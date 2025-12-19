@@ -218,9 +218,10 @@ export default function CreatePosterPage() {
     </div>
   );
 }
+
+// This tells Next.js which IDs to build statically
 export async function generateStaticParams() {
   const posters = await getPosters();
-  
   return posters.map((poster) => ({
     id: poster.id,
   }));
