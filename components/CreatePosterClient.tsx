@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProfile } from '@/components/ProfileContext';
 import PosterCanvas from '@/components/PosterCanvas';
@@ -8,14 +8,13 @@ import Link from 'next/link';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '@/lib/cropImage';
 
-// REMOVED: import { getPosters } ...
-// REMOVED: generateStaticParams function ...
-
-export default function CreatePosterClient({ params }: { params: { id: string } }) {
+// Receive posterData directly from the Server Page
+export default function CreatePosterClient({ posterData }: { posterData: any }) {
   const router = useRouter();
   const { profile, isLoaded } = useProfile();
   
-  const [poster, setPoster] = useState<any>(null);
+  // Initialize state with the passed data (No fetching needed!)
+  const [poster, setPoster] = useState<any>(posterData);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
 
@@ -33,17 +32,14 @@ export default function CreatePosterClient({ params }: { params: { id: string } 
   // Debug
   const [showDebug, setShowDebug] = useState(false);
   const [config, setConfig] = useState({
-    photoX: 770, photoY: 1530, photoSize: 250,
-    nameX: 740, nameY: 1620, nameSize: 75, desigYOffset: 65
+    photoX: 545,
+    photoY: 1391,
+    photoSize: 480,
+    nameX: 495,
+    nameY: 1555,
+    nameSize: 78,
+    desigYOffset: 65
   });
-
-  // Load Poster (Using fetch, NOT getPosters directly to avoid FS error)
-  useEffect(() => {
-    fetch('/data/posters.json').then(res => res.json()).then(data => {
-      const found = data.find((p: any) => p.id === params.id);
-      if (found) setPoster(found);
-    });
-  }, [params.id]);
 
   // Load Profile
   useEffect(() => {
@@ -133,10 +129,12 @@ export default function CreatePosterClient({ params }: { params: { id: string } 
     document.body.removeChild(link);
   };
 
-  if (!poster || !isLoaded) return <div className="min-h-screen flex items-center justify-center bg-neutral-900"><Loader2 className="animate-spin text-white" /></div>;
+  // If poster is null, it means data failed to pass. But if !isLoaded, we wait for profile.
+  if (!poster) return <div className="min-h-screen flex items-center justify-center bg-neutral-900 text-white">Poster Not Found</div>;
+  if (!isLoaded) return <div className="min-h-screen flex items-center justify-center bg-neutral-900"><Loader2 className="animate-spin text-white" /></div>;
 
   return (
-    <div className="min-h-screen bg-neutral-900 pb-32 flex flex-col pt-24">
+    <div className="min-h-screen bg-neutral-900 pb-32 flex flex-col">
       <div className="p-4 flex items-center justify-between text-white z-10">
         <div className="flex items-center gap-4">
             <Link href="/" className="p-2 bg-white/10 rounded-full backdrop-blur-md">
@@ -144,17 +142,7 @@ export default function CreatePosterClient({ params }: { params: { id: string } 
             </Link>
             <h1 className="font-bold font-hindi truncate w-40">{poster.title}</h1>
         </div>
-        <button onClick={() => setShowDebug(!showDebug)} className={`p-2 rounded-full ${showDebug ? 'bg-primary' : 'bg-white/10'}`}>
-            <Settings2 size={20} />
-        </button>
       </div>
-
-      {showDebug && (
-        <div className="bg-black/80 text-white p-4 text-xs space-y-2 absolute top-16 inset-x-0 z-50 h-64 overflow-y-auto border-b border-gray-700">
-             <div><label>Name X: {config.nameX}</label><input type="range" min="0" max="1080" value={config.nameX} onChange={e => { setConfig({...config, nameX: Number(e.target.value)}); setIsGenerating(true); }} className="w-full" /></div>
-             <p className="text-center text-primary font-bold mt-2">Adjust sliders &rarr; Write numbers &rarr; Update Code</p>
-        </div>
-      )}
 
       {/* Preview */}
       <div className="flex-1 flex flex-col items-center justify-center p-4">
