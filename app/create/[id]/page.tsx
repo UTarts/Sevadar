@@ -7,6 +7,7 @@ import { Download, Share2, ArrowLeft, Loader2, Settings2, Camera } from 'lucide-
 import Link from 'next/link';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '@/lib/cropImage';
+import { getPosters } from '@/lib/posters';
 
 export default function CreatePosterPage() {
   const params = useParams();
@@ -216,4 +217,11 @@ export default function CreatePosterPage() {
       )}
     </div>
   );
+}
+export async function generateStaticParams() {
+  const posters = await getPosters();
+  
+  return posters.map((poster) => ({
+    id: poster.id,
+  }));
 }
