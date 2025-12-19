@@ -1,0 +1,232 @@
+[
+  {
+    "id": "new-year-2026",
+    "title": "अंग्रेजी नववर्ष",
+    "date": "01-01-2026",
+    "image": "/posters/1.webp",
+    "type": "dated",
+    "priority": "high"
+  },
+  {
+    "id": "paush-poornima-2026",
+    "title": "पौष पूर्णिमा",
+    "date": "02-01-2026",
+    "image": "/posters/2.webp",
+    "type": "dated"
+  },
+  {
+    "id": "sakat-2026",
+    "title": "सकट चौथ",
+    "date": "06-01-2026",
+    "image": "/posters/3.webp",
+    "type": "dated"
+  },
+  {
+    "id": "hindi-diwas-2026",
+    "title": "विश्व हिन्दी दिवस",
+    "date": "10-01-2026",
+    "image": "/posters/4.webp",
+    "type": "dated"
+  },
+  {
+    "id": "lal-bahadur-2026",
+    "title": "लाल बहादुर शास्त्री (पुण्यतिथि)",
+    "date": "11-01-2026",
+    "image": "/posters/5.webp",
+    "type": "dated"
+  },
+  {
+    "id": "youth-day-2026",
+    "title": "राष्ट्रीय युवा दिवस",
+    "date": "12-01-2026",
+    "image": "/posters/7.webp",
+    "type": "dated"
+  },
+  {
+    "id": "vivekananda-jayanti-2026",
+    "title": "स्वामी विवेकानंद जयंती",
+    "date": "12-01-2026",
+    "image": "/posters/6.webp",
+    "type": "dated"
+  },
+  {
+    "id": "lohri-2026",
+    "title": "लोहड़ी",
+    "date": "13-01-2026",
+    "image": "/posters/8.webp",
+    "type": "dated"
+  },
+  {
+    "id": "makar-sankranti-2026",
+    "title": "मकर संक्रांति",
+    "date": "14-01-2026",
+    "image": "/posters/9.webp",
+    "type": "dated"
+  },
+  {
+    "id": "pongal-2026",
+    "title": "पोंगल",
+    "date": "14-01-2026",
+    "image": "/posters/10.webp",
+    "type": "dated"
+  },
+  {
+    "id": "india-army-day-2026",
+    "title": "भारतीय थल सेना दिवस",
+    "date": "15-01-2026",
+    "image": "/posters/11.webp",
+    "type": "dated"
+  },
+  {
+    "id": "mauni-amavasya-2026",
+    "title": "मौनी अमावस्या",
+    "date": "18-01-2026",
+    "image": "/posters/12.webp",
+    "type": "dated"
+  },
+  {
+    "id": "guru-gobind-2026",
+    "title": "गुरु गोबिंद सिंह जयंती",
+    "date": "20-01-2026",
+    "image": "/posters/13.webp",
+    "type": "dated"
+  },
+  {
+    "id": "subhash-bose-jayanti-2026",
+    "title": "नेताजी सुभाष चंद्र बोस जयंती",
+    "date": "23-01-2026",
+    "image": "/posters/15.webp",
+    "type": "dated"
+  },
+  {
+    "id": "vasant-panchami-2026",
+    "title": "वसंत पंचमी",
+    "date": "23-01-2026",
+    "image": "/posters/14.webp",
+    "type": "dated"
+  },
+  {
+    "id": "blika-divas-2026",
+    "title": "राष्ट्रीय बालिका दिवस",
+    "date": "24-01-2026",
+    "image": "/posters/16.webp",
+    "type": "dated"
+  },
+  {
+    "id": "voter-day-2026",
+    "title": "राष्ट्रीय मतदाता दिवस",
+    "date": "25-01-2026",
+    "image": "/posters/17.webp",
+    "type": "dated"
+  },
+  {
+    "id": "republic-day-2026",
+    "title": "गणतंत्र दिवस",
+    "date": "26-01-2026",
+    "image": "/posters/18.webp",
+    "type": "dated"
+  },
+  {
+    "id": "lala-lajpat-2026",
+    "title": "लाल लाजपत राय जयंती",
+    "date": "28-01-2026",
+    "image": "/posters/19.webp",
+    "type": "dated"
+  },
+  {
+    "id": "gandhi-punyatithi-2026",
+    "title": "महात्मा गांधी पुण्यतिथि",
+    "date": "30-01-2026",
+    "image": "/posters/20.webp",
+    "type": "dated"
+  },
+  {
+    "id": "ravidas-jayanti-2026",
+    "title": "माघ पूर्णिमा एवं संत रविदास जयंती",
+    "date": "01-02-2026",
+    "image": "/posters/21.webp",
+    "type": "dated"
+  },
+  {
+    "id": "cancer-day-2026",
+    "title": "विश्व कैंसर दिवस",
+    "date": "04-02-2026",
+    "image": "/posters/22.webp",
+    "type": "dated"
+  },
+  {
+    "id": "dayanand-jayanti-2026",
+    "title": "महर्षि दयानंद सरस्वती जयंती",
+    "date": "12-02-2026",
+    "image": "/posters/23.webp",
+    "type": "dated"
+  },
+  {
+    "id": "shivratri-2026",
+    "title": "महाशिवरात्रि",
+    "date": "15-02-2026",
+    "image": "/posters/24.webp",
+    "type": "dated"
+  },
+  
+
+  
+
+
+
+
+
+
+
+
+
+  {
+    "id": "farmers-welfare",
+    "title": "किसानों के हित में",
+    "image": "/posters/g1.webp",
+    "type": "general"
+  },
+  {
+    "id": "general11",
+    "title": "जय प्रतापगढ़",
+    "image": "/posters/g7.webp",
+    "type": "general"
+  },
+  {
+    "id": "general1",
+    "title": "जय प्रतापगढ़",
+    "image": "/posters/g5.webp",
+    "type": "general"
+  },
+  {
+    "id": "youth-employment",
+    "title": "युवा रोजगार संकल्प",
+    "image": "/posters/g2.webp",
+    "type": "general"
+  },
+  {
+    "id": "general22",
+    "title": "जय प्रतापगढ़",
+    "image": "/posters/g6.webp",
+    "type": "general"
+  },
+  {
+    "id": "siksha-ko-protsahan",
+    "title": "जय प्रतापगढ़",
+    "image": "/posters/g8.webp",
+    "type": "general"
+  },
+  {
+    "id": "health-care",
+    "title": "बेहतर स्वास्थ्य सेवा",
+    "image": "/posters/g3.webp",
+    "type": "general"
+  },
+  {
+    "id": "general111",
+    "title": "जय प्रतापगढ़",
+    "image": "/posters/g4.webp",
+    "type": "general"
+  }
+  
+]
