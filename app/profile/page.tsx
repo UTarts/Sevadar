@@ -31,7 +31,7 @@ export default function ProfilePage() {
       if (name && /[a-zA-Z]/.test(name)) {
         performTranslation(name, setName);
       }
-    }, 800); // Wait 800ms after typing stops
+    }, 1200); // Wait 800ms after typing stops
     return () => clearTimeout(timer);
   }, [name]);
 
@@ -40,7 +40,7 @@ export default function ProfilePage() {
       if (designation && /[a-zA-Z]/.test(designation)) {
         performTranslation(designation, setDesignation);
       }
-    }, 800);
+    }, 1200);
     return () => clearTimeout(timer);
   }, [designation]);
 
@@ -98,14 +98,14 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-neutral-100 font-sans pb-32 pt-24">
       {/* Header */}
       <div className="bg-primary text-white p-4 fixed top-0 left-0 right-0 z-40 flex items-center gap-4 shadow-md">
-        <Link href="/">
+        <Link href="/" replace={true} >
           <ArrowLeft size={24} />
         </Link>
         <h1 className="text-xl font-bold font-hindi">मेरी प्रोफाइल (Edit Profile)</h1>
         {isTranslating && <Loader2 size={18} className="animate-spin ml-auto" />}
       </div>
 
-      <div className="p-6 max-w-lg mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-500">
+      <div className="p-6 max-w-lg mx-auto space-y-8">
         
         {/* Photo Upload */}
         <div className="flex flex-col items-center">
@@ -172,7 +172,7 @@ export default function ProfilePage() {
 
       {/* Cropper Modal */}
       {isCropping && tempPhoto && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 bg-black flex flex-col ">
           <div className="relative flex-1 bg-black">
             <Cropper
               image={tempPhoto}

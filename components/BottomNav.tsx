@@ -10,13 +10,12 @@ export default function BottomNav() {
   return (
     <nav className="fixed bottom-0 w-full bg-white border-t border-gray-200 py-3 px-2 flex justify-around items-center z-50 text-[10px] font-medium text-gray-500 pb-safe shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
       
-      {/* HOME: Use replace={true} so Back button doesn't loop */}
+      {/* ⚠️ CRITICAL: replace={true} ensures Back button exits app from Home */}
       <Link href="/" replace={true} className={`flex flex-col items-center gap-1 ${isActive('/') ? 'text-primary' : ''}`}>
         <Download size={22} strokeWidth={isActive('/') ? 2.5 : 2} />
         <span>Home</span>
       </Link>
 
-      {/* OTHERS: Normal push navigation so Back button works correctly */}
       <Link href="/all-posters" className={`flex flex-col items-center gap-1 ${isActive('/all-posters') ? 'text-primary' : ''}`}>
         <Grid size={22} strokeWidth={isActive('/all-posters') ? 2.5 : 2} />
         <span>Gallery</span>

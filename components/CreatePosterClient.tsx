@@ -8,12 +8,11 @@ import Link from 'next/link';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '@/lib/cropImage';
 
-// Receive posterData directly from the Server Page
 export default function CreatePosterClient({ posterData }: { posterData: any }) {
   const router = useRouter();
   const { profile, isLoaded } = useProfile();
   
-  // Initialize state with the passed data
+  // State
   const [poster] = useState<any>(posterData);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
@@ -22,14 +21,14 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
   const [customDesignation, setCustomDesignation] = useState('');
   const [customPhoto, setCustomPhoto] = useState<string | null>(null);
 
-  // Cropper
+  // Cropper State
   const [isCropping, setIsCropping] = useState(false);
   const [tempPhoto, setTempPhoto] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-  // Debug
+  // Debug & Config
   const [showDebug, setShowDebug] = useState(false);
   const [config, setConfig] = useState({
     photoX: 545, photoY: 1391, photoSize: 480,
@@ -47,7 +46,7 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
     }
   }, [isLoaded, profile, router]);
 
-  // --- AUTO TRANSLATE ---
+  // Auto Translate
   const performTranslation = async (text: string, setter: (s: string) => void) => {
     try {
       const res = await fetch(`https://www.google.com/inputtools/request?text=${text}&itc=hi-t-i0-und&num=1&cp=0&cs=1&ie=utf-8&oe=utf-8`);
@@ -62,18 +61,18 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
   useEffect(() => {
     const timer = setTimeout(() => {
       if (customName && /[a-zA-Z]/.test(customName)) performTranslation(customName, setCustomName);
-    }, 800);
+    }, 1100);
     return () => clearTimeout(timer);
   }, [customName]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       if (customDesignation && /[a-zA-Z]/.test(customDesignation)) performTranslation(customDesignation, setCustomDesignation);
-    }, 800);
+    }, 1100);
     return () => clearTimeout(timer);
   }, [customDesignation]);
   
-  // Image Handlers
+  // Handlers
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
@@ -109,7 +108,6 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
         });
       } catch (err) { console.log("Share cancelled"); }
     } else {
-      alert("Sharing not supported on this browser. Image downloaded.");
       handleDownload();
     }
   };
@@ -129,7 +127,8 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
 
   return (
     <div className="min-h-screen bg-neutral-900 pb-32 flex flex-col">
-      <div className="p-4 flex items-center justify-between text-white z-10">
+      {/* Header */}
+      <div className="p-4 flex items-center justify-between text-white z-10 pt-3">
         <div className="flex items-center gap-4">
             <Link href="/" className="p-2 bg-white/10 rounded-full backdrop-blur-md">
             <ArrowLeft size={24} />
@@ -138,7 +137,8 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-4">
+      {/* Preview Section - UPDATED: justify-start and tighter padding */}
+      <div className="flex-1 flex flex-col items-center justify-start p-2 pt-0">
         <div className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 bg-gray-800 group">
            {isGenerating && (
              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white">
@@ -157,6 +157,7 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
         />
       </div>
 
+      {/* Controls */}
       <div className="bg-white rounded-3xl mx-2 mb-2 p-6 shadow-2xl animate-in slide-in-from-bottom duration-500">
          <div className="flex gap-3 mb-6">
             <div className="flex-1">
@@ -174,10 +175,19 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
          </div>
       </div>
       
+      {/* Cropper - UPDATED: z-[100] and pb-24 for bottom padding */}
       {isCropping && tempPhoto && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col animate-in fade-in duration-300">
-            <div className="relative flex-1 bg-black"><Cropper image={tempPhoto} crop={crop} zoom={zoom} aspect={1} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(a, b) => setCroppedAreaPixels(b)} /></div>
-            <div className="bg-neutral-900 p-6 flex flex-col gap-4 pb-safe"><div className="flex gap-4"><button onClick={() => setIsCropping(false)} className="flex-1 py-3 rounded-xl font-bold text-white bg-gray-700">Cancel</button><button onClick={finishCrop} className="flex-1 py-3 rounded-xl font-bold text-white bg-green-600">Done</button></div></div>
+        <div className="fixed inset-0 z-[100] bg-black flex flex-col animate-in fade-in duration-300">
+            <div className="relative flex-1 bg-black">
+                <Cropper image={tempPhoto} crop={crop} zoom={zoom} aspect={1} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(a, b) => setCroppedAreaPixels(b)} />
+            </div>
+            {/* Added pb-24 to ensure buttons are above nav bar area if needed, though z-100 fixes overlapping */}
+            <div className="bg-neutral-900 p-6 pb-24 flex flex-col gap-4">
+                <div className="flex gap-4">
+                    <button onClick={() => setIsCropping(false)} className="flex-1 py-3 rounded-xl font-bold text-white bg-gray-700">Cancel</button>
+                    <button onClick={finishCrop} className="flex-1 py-3 rounded-xl font-bold text-white bg-green-600">Done</button>
+                </div>
+            </div>
         </div>
       )}
     </div>

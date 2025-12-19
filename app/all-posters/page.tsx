@@ -2,12 +2,15 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
-import { Search, Calendar, ChevronRight, Filter } from 'lucide-react';
+import { Search, Calendar, ChevronRight, ChevronDown } from 'lucide-react';
 
 export default function AllPostersPage() {
   const [posters, setPosters] = useState<any[]>([]);
   const [filter, setFilter] = useState('');
-  const [category, setCategory] = useState<'upcoming' | 'all' | 'past'>('upcoming'); // DEFAULT UPCOMING
+  const [category, setCategory] = useState<'upcoming' | 'all' | 'past'>('upcoming');
+  
+  // PERFORMANCE: Only show this many initially
+  const [visibleCount, setVisibleCount] = useState(12);
 
   useEffect(() => {
     fetch('/data/posters.json')
@@ -22,15 +25,46 @@ export default function AllPostersPage() {
     return new Date(year, month - 1, day);
   };
 
+  // --- ENGLISH TO HINDI DICTIONARY ---
+  const englishToHindiMap: Record<string, string> = {
+    "diwali": "दीपावली",
+    "deepawali": "दीपावली",
+    "holi": "होली",
+    "new year": "नववर्ष",
+    "republic": "गणतंत्र",
+    "independence": "स्वतंत्रता",
+    "christmas": "क्रिसमस",
+    "eid": "ईद",
+    "raksha": "रक्षाबंधन",
+    "basant": "बसंत",
+    "shivratri": "शिवरात्रि",
+    "youth": "युवा",
+    "army": "सेना",
+    "navratri": "नवरात्रि",
+    "dussehra": "दशहरा"
+  };
+
   const filteredPosters = posters
     .filter(p => {
-        // HIDE GENERAL POSTERS from this page entirely
+        // 1. Hide General Posters from Gallery
         if (p.type === 'general') return false;
 
-        const matchesSearch = p.title.toLowerCase().includes(filter.toLowerCase()) || 
-                              (p.date && p.date.includes(filter));
+        // 2. Advanced Search Logic
+        const searchLower = filter.toLowerCase();
+        
+        // Check if english input matches a hindi festival key
+        let hindiTerm = "";
+        Object.keys(englishToHindiMap).forEach(key => {
+            if (searchLower.includes(key)) hindiTerm = englishToHindiMap[key];
+        });
+
+        const matchesSearch = p.title.toLowerCase().includes(searchLower) || 
+                              (p.date && p.date.includes(filter)) ||
+                              (hindiTerm && p.title.includes(hindiTerm)); // Search by Hindi translation
+
         if (!matchesSearch) return false;
 
+        // 3. Category Filter
         const today = new Date();
         today.setHours(0,0,0,0);
         const pDate = p.date ? parseDate(p.date) : null;
@@ -38,14 +72,21 @@ export default function AllPostersPage() {
         if (category === 'upcoming') return pDate && pDate >= today;
         if (category === 'past') return pDate && pDate < today;
         
-        return true; // 'all' shows all dated posters
+        return true; 
     })
     .sort((a, b) => {
-        // Sort by Date (Ascending for Upcoming, Descending for Past/All)
+        // Sort by Date
         const dateA = parseDate(a.date).getTime();
         const dateB = parseDate(b.date).getTime();
         return dateA - dateB; 
     });
+
+  // PERFORMANCE: Slice the data based on visibleCount
+  const visiblePosters = filteredPosters.slice(0, visibleCount);
+
+  const loadMore = () => {
+    setVisibleCount(prev => prev + 12);
+  };
 
   return (
     <div className="min-h-screen bg-neutral-100 pt-24 pb-28 font-sans">
@@ -57,22 +98,25 @@ export default function AllPostersPage() {
             <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
             <input 
                 type="text" 
-                placeholder="तारीख या नाम खोजें..." 
+                placeholder="खोजें (Search)..." 
                 className="w-full pl-12 pr-4 py-3 rounded-2xl border-none bg-transparent focus:ring-2 ring-primary focus:outline-none font-hindi text-gray-800"
                 value={filter}
-                onChange={(e) => setFilter(e.target.value)}
+                onChange={(e) => {
+                    setFilter(e.target.value);
+                    setVisibleCount(12); // Reset pagination on search
+                }}
             />
         </div>
 
         {/* Filters */}
         <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-            <button onClick={() => setCategory('upcoming')} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${category === 'upcoming' ? 'bg-primary text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'}`}>
+            <button onClick={() => { setCategory('upcoming'); setVisibleCount(12); }} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${category === 'upcoming' ? 'bg-primary text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'}`}>
                 आगामी (Upcoming)
             </button>
-            <button onClick={() => setCategory('all')} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${category === 'all' ? 'bg-primary text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'}`}>
+            <button onClick={() => { setCategory('all'); setVisibleCount(12); }} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${category === 'all' ? 'bg-primary text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'}`}>
                 सभी (All)
             </button>
-            <button onClick={() => setCategory('past')} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${category === 'past' ? 'bg-primary text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'}`}>
+            <button onClick={() => { setCategory('past'); setVisibleCount(12); }} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${category === 'past' ? 'bg-primary text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'}`}>
                 पुराने (Previous)
             </button>
         </div>
@@ -81,10 +125,17 @@ export default function AllPostersPage() {
       {/* Grid */}
       <div className="px-4">
         <div className="grid grid-cols-2 gap-4">
-          {filteredPosters.length > 0 ? filteredPosters.map((poster) => (
+          {visiblePosters.length > 0 ? visiblePosters.map((poster) => (
               <Link key={poster.id} href={`/create/${poster.id}`} className="block bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
                   <div className="aspect-[9/16] bg-gray-200 relative">
-                      <img src={poster.image} alt={poster.title} className="w-full h-full object-cover" loading="lazy" />
+                      {/* PERFORMANCE: loading="lazy" is crucial here */}
+                      <img 
+                        src={poster.image} 
+                        alt={poster.title} 
+                        className="w-full h-full object-cover" 
+                        loading="lazy" 
+                        decoding="async"
+                      />
                       {poster.date && (
                           <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-md backdrop-blur-md flex items-center gap-1">
                               <Calendar size={10} /> {poster.date}
@@ -104,6 +155,18 @@ export default function AllPostersPage() {
              </div>
           )}
         </div>
+
+        {/* Load More Button */}
+        {visibleCount < filteredPosters.length && (
+            <div className="mt-8 flex justify-center">
+                <button 
+                    onClick={loadMore}
+                    className="flex items-center gap-2 bg-white text-gray-600 border border-gray-300 px-6 py-2 rounded-full font-bold shadow-sm hover:bg-gray-50 transition-colors"
+                >
+                    और देखें (Load More) <ChevronDown size={18} />
+                </button>
+            </div>
+        )}
       </div>
     </div>
   );
