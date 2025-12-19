@@ -13,8 +13,8 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
   const router = useRouter();
   const { profile, isLoaded } = useProfile();
   
-  // Initialize state with the passed data (No fetching needed!)
-  const [poster, setPoster] = useState<any>(posterData);
+  // Initialize state with the passed data
+  const [poster] = useState<any>(posterData);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
 
@@ -32,13 +32,8 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
   // Debug
   const [showDebug, setShowDebug] = useState(false);
   const [config, setConfig] = useState({
-    photoX: 545,
-    photoY: 1391,
-    photoSize: 480,
-    nameX: 495,
-    nameY: 1555,
-    nameSize: 78,
-    desigYOffset: 65
+    photoX: 545, photoY: 1391, photoSize: 480,
+    nameX: 495, nameY: 1555, nameSize: 78, desigYOffset: 65
   });
 
   // Load Profile
@@ -129,7 +124,6 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
     document.body.removeChild(link);
   };
 
-  // If poster is null, it means data failed to pass. But if !isLoaded, we wait for profile.
   if (!poster) return <div className="min-h-screen flex items-center justify-center bg-neutral-900 text-white">Poster Not Found</div>;
   if (!isLoaded) return <div className="min-h-screen flex items-center justify-center bg-neutral-900"><Loader2 className="animate-spin text-white" /></div>;
 
@@ -144,7 +138,6 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
         </div>
       </div>
 
-      {/* Preview */}
       <div className="flex-1 flex flex-col items-center justify-center p-4">
         <div className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 bg-gray-800 group">
            {isGenerating && (
@@ -164,7 +157,6 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
         />
       </div>
 
-      {/* Controls */}
       <div className="bg-white rounded-3xl mx-2 mb-2 p-6 shadow-2xl animate-in slide-in-from-bottom duration-500">
          <div className="flex gap-3 mb-6">
             <div className="flex-1">
@@ -176,29 +168,16 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
                <input value={customDesignation} onChange={(e) => setCustomDesignation(e.target.value)} className="w-full bg-gray-100 p-2 rounded-lg font-hindi text-gray-800 border-none focus:ring-2 ring-primary" />
             </div>
          </div>
-
          <div className="flex gap-4">
-            <button onClick={handleDownload} className="flex-1 bg-gray-100 text-gray-800 py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-200">
-               <Download size={20} /> Save
-            </button>
-            <button onClick={handleShare} className="flex-[2] bg-gradient-to-r from-green-600 to-green-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
-               <Share2 size={20} /> Share
-            </button>
+            <button onClick={handleDownload} className="flex-1 bg-gray-100 text-gray-800 py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-200"><Download size={20} /> Save</button>
+            <button onClick={handleShare} className="flex-[2] bg-gradient-to-r from-green-600 to-green-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform"><Share2 size={20} /> Share</button>
          </div>
       </div>
       
-      {/* Cropper */}
       {isCropping && tempPhoto && (
         <div className="fixed inset-0 z-50 bg-black flex flex-col animate-in fade-in duration-300">
-            <div className="relative flex-1 bg-black">
-                <Cropper image={tempPhoto} crop={crop} zoom={zoom} aspect={1} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(a, b) => setCroppedAreaPixels(b)} />
-            </div>
-            <div className="bg-neutral-900 p-6 flex flex-col gap-4 pb-safe">
-                <div className="flex gap-4">
-                    <button onClick={() => setIsCropping(false)} className="flex-1 py-3 rounded-xl font-bold text-white bg-gray-700">Cancel</button>
-                    <button onClick={finishCrop} className="flex-1 py-3 rounded-xl font-bold text-white bg-green-600">Done</button>
-                </div>
-            </div>
+            <div className="relative flex-1 bg-black"><Cropper image={tempPhoto} crop={crop} zoom={zoom} aspect={1} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(a, b) => setCroppedAreaPixels(b)} /></div>
+            <div className="bg-neutral-900 p-6 flex flex-col gap-4 pb-safe"><div className="flex gap-4"><button onClick={() => setIsCropping(false)} className="flex-1 py-3 rounded-xl font-bold text-white bg-gray-700">Cancel</button><button onClick={finishCrop} className="flex-1 py-3 rounded-xl font-bold text-white bg-green-600">Done</button></div></div>
         </div>
       )}
     </div>
