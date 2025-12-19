@@ -163,7 +163,7 @@ export default function AllPostersPage() {
                     onClick={loadMore}
                     className="flex items-center gap-2 bg-white text-gray-600 border border-gray-300 px-6 py-2 rounded-full font-bold shadow-sm hover:bg-gray-50 transition-colors"
                 >
-                    और देखें (Load More) <ChevronDown size={18} />
+                    और देखें (Load More) <ChevronDown size={12} />
                 </button>
             </div>
         )}

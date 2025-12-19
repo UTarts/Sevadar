@@ -104,7 +104,7 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
         await navigator.share({
           files: [file],
           title: 'Mission 2029',
-          text: 'मेरा समर्थन कार्ड देखिए! जय भारत, जय प्रतापगढ़!'
+          text: 'जय भारत, जय प्रतापगढ़!'
         });
       } catch (err) { console.log("Share cancelled"); }
     } else {
@@ -175,7 +175,6 @@ export default function CreatePosterClient({ posterData }: { posterData: any }) 
          </div>
       </div>
       
-      {/* Cropper - UPDATED: z-[100] and pb-24 for bottom padding */}
       {isCropping && tempPhoto && (
         <div className="fixed inset-0 z-[100] bg-black flex flex-col animate-in fade-in duration-300">
             <div className="relative flex-1 bg-black">

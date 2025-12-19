@@ -172,28 +172,17 @@ export default function ProfilePage() {
 
       {/* Cropper Modal */}
       {isCropping && tempPhoto && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col ">
-          <div className="relative flex-1 bg-black">
-            <Cropper
-              image={tempPhoto}
-              crop={crop}
-              zoom={zoom}
-              aspect={1}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={onCropComplete}
-            />
-          </div>
-          <div className="bg-neutral-900 p-6 flex flex-col gap-4 pb-safe">
-            <div className="flex items-center gap-4">
-              <span className="text-white text-xs">Zoom</span>
-              <input type="range" value={zoom} min={1} max={3} step={0.1} onChange={(e) => setZoom(Number(e.target.value))} className="w-full accent-primary h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer" />
+        <div className="fixed inset-0 z-[100] bg-black flex flex-col animate-in fade-in duration-300">
+            <div className="relative flex-1 bg-black">
+                <Cropper image={tempPhoto} crop={crop} zoom={zoom} aspect={1} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={(a, b) => setCroppedAreaPixels(b)} />
             </div>
-            <div className="flex gap-4">
-               <button onClick={() => setIsCropping(false)} className="flex-1 py-3 rounded-xl font-bold text-white bg-gray-700">Cancel</button>
-               <button onClick={showCroppedImage} className="flex-1 py-3 rounded-xl font-bold text-white bg-green-600 shadow-[0_0_20px_rgba(34,197,94,0.4)]">Done</button>
+            {/* Added pb-24 to ensure buttons are above nav bar area if needed, though z-100 fixes overlapping */}
+            <div className="bg-neutral-900 p-6 pb-24 flex flex-col gap-4">
+                <div className="flex gap-4">
+                    <button onClick={() => setIsCropping(false)} className="flex-1 py-3 rounded-xl font-bold text-white bg-gray-700">Cancel</button>
+                    <button onClick={showCroppedImage} className="flex-1 py-3 rounded-xl font-bold text-white bg-green-600">Done</button>
+                </div>
             </div>
-          </div>
         </div>
       )}
     </div>
