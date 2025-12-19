@@ -314,7 +314,7 @@ export default async function Home() {
 
   {/* Floating Action Button (Bottom Right) */}
   <a 
-    href="https://maps.google.com" // Replace with your actual Google Maps Link
+    href="https://maps.app.goo.gl/JKg7NJxv5wNB3hsQ6" // Replace with your actual Google Maps Link
     target="_blank"
     className="absolute bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg shadow-blue-600/30 flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform z-10"
   >
