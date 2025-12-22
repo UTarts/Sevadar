@@ -7,8 +7,8 @@ import { useProfile } from './ProfileContext';
 interface Poll {
   id: number;
   question: string;
-  options: string[]; // Fixed: Now an Array
-  votes: number[];   // Fixed: Now an Array
+  options: string[]; 
+  votes: number[];   
 }
 
 export default function PollWidget() {
@@ -59,21 +59,18 @@ export default function PollWidget() {
   }
 
   const handleVote = async (index: number) => {
-    // 1. Admin Block
     if (profile.is_admin) return;
-
     if (!poll) return;
+    
     setSubmitting(true);
-
-    // 2. Auth Check
     const { data: { user } } = await supabase.auth.getUser();
+    
     if (!user) {
       window.dispatchEvent(new Event('open-auth')); 
       setSubmitting(false);
       return;
     }
 
-    // 3. Submit via SQL Function
     const { error } = await supabase.rpc('submit_vote', {
       p_poll_id: poll.id,
       p_option_index: index
@@ -88,12 +85,10 @@ export default function PollWidget() {
       }
     } else {
       setVotedOptionIdx(index);
-      
       if (!votedOptionIdx) {
           const newPoints = (profile.points || 0) + 5;
           updateProfile({ points: newPoints });
       }
-
       // Optimistic Update
       const newVotes = [...(poll.votes || [])];
       newVotes[index] = (newVotes[index] || 0) + 1;
@@ -105,7 +100,6 @@ export default function PollWidget() {
   if (loading) return <div className="h-40 bg-gray-100 rounded-3xl animate-pulse" />;
   if (!poll || !poll.options || poll.options.length === 0) return null;
 
-  // Calculate Totals
   const totalVotes = poll.votes ? poll.votes.reduce((a, b) => a + b, 0) : 0;
   const getPercent = (count: number) => totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100);
 
@@ -113,7 +107,6 @@ export default function PollWidget() {
     <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 relative overflow-hidden mb-6">
       <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-full -mr-10 -mt-10 opacity-50 pointer-events-none" />
 
-      {/* Header */}
       <div className="flex items-center justify-between mb-4 relative z-10">
         <div className="flex items-center gap-2">
             <BarChart2 className="text-primary" size={20} />
@@ -130,7 +123,6 @@ export default function PollWidget() {
 
       <h4 className="text-xl font-bold font-hindi text-gray-900 mb-6 leading-snug">{poll.question}</h4>
 
-      {/* Options List */}
       <div className="space-y-3 relative z-10">
         {poll.options.map((optionText, idx) => {
           const voteCount = poll.votes ? (poll.votes[idx] || 0) : 0;
@@ -151,29 +143,22 @@ export default function PollWidget() {
                     : 'border-gray-200 bg-white hover:border-primary hover:bg-orange-50'
               }`}
             >
-              {/* Progress Bar Background */}
               {showStats && (
                 <div 
                   className={`absolute top-0 left-0 h-full transition-all duration-1000 ease-out ${isSelected ? 'bg-green-200/50' : 'bg-gray-200/50'}`} 
                   style={{ width: `${percent}%` }} 
                 />
               )}
-
               <div className="relative flex justify-between items-center z-10 px-1">
                 <span className={`font-hindi font-bold text-sm ${isSelected ? 'text-green-800' : 'text-gray-700'}`}>
                   {optionText}
                 </span>
-                
-                {/* Stats Section */}
                 {showStats && (
                   <div className="text-right">
                       <span className="text-xs font-bold text-gray-800 block">{percent}%</span>
-                      {profile.is_admin && (
-                          <span className="text-[10px] text-gray-500 font-medium">({voteCount} votes)</span>
-                      )}
+                      {profile.is_admin && <span className="text-[10px] text-gray-500 font-medium">({voteCount} votes)</span>}
                   </div>
                 )}
-
                 {!showStats && submitting && <Loader2 size={16} className="animate-spin text-gray-400" />}
               </div>
             </button>

@@ -59,7 +59,6 @@ export default function FeedPage() {
 
   return (
     <div className="fixed inset-0 bg-black z-40">
-      {/* Header */}
       <div className="absolute top-0 inset-x-0 z-50 p-4 pt-safe flex items-center justify-between pointer-events-none">
          <div className="flex items-center gap-3 pointer-events-auto">
              <Link href="/" className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white hover:bg-black/40 transition">
@@ -69,7 +68,6 @@ export default function FeedPage() {
          </div>
       </div>
 
-      {/* Main Feed Container */}
       <div 
         ref={containerRef}
         className="h-full w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar" 
@@ -94,13 +92,10 @@ export default function FeedPage() {
   );
 }
 
-// --- INDIVIDUAL FEED ITEM ---
 function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, onComplete: () => void }) {
     const { profile, updateProfile } = useProfile();
     const [isVisible, setIsVisible] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
-    
-    // States
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(post.likes || 0);
     const [showComments, setShowComments] = useState(false);
@@ -109,7 +104,6 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
         const observer = new IntersectionObserver(([entry]) => {
             setIsVisible(entry.isIntersecting);
         }, { threshold: 0.6 });
-
         if (cardRef.current) observer.observe(cardRef.current);
         return () => observer.disconnect();
     }, []);
@@ -129,10 +123,8 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
         if (liked) return; 
         setLiked(true);
         setLikeCount(prev => prev + 1);
-        
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { window.dispatchEvent(new Event('open-auth')); return; }
-
         const { error } = await supabase.rpc('like_feed_post', { p_post_id: post.id });
         if (!error) updateProfile({ points: (profile.points || 0) + 1 });
     };
@@ -143,13 +135,8 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
             text: `${post.title}\n\n${post.description}\n\n📲 Download the App & Join the Mission:\nhttps://brijeshtiwari.in`,
             url: "https://brijeshtiwari.in"
         };
-        
         if (navigator.share) {
-            try {
-                await navigator.share(shareData);
-            } catch (err) {
-                copyToClipboard(shareData.text);
-            }
+            try { await navigator.share(shareData); } catch (err) { copyToClipboard(shareData.text); }
         } else {
             copyToClipboard(shareData.text);
         }
@@ -169,15 +156,12 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
                 <ImageCarousel post={post} isVisible={isVisible} onComplete={onComplete} />
             )}
             
-            {/* Overlay Info */}
             <div className="absolute inset-x-0 bottom-0 p-5 pb-24 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none z-20">
                 <h2 className="text-xl font-bold text-white mb-2 font-hindi leading-tight drop-shadow-md">{post.title}</h2>
                 <p className="text-sm text-gray-200 font-hindi leading-relaxed line-clamp-3 opacity-90">{post.description}</p>
             </div>
 
-            {/* Right Side Actions */}
             <div className="absolute bottom-24 right-3 z-30 flex flex-col gap-6 items-center">
-                {/* LIKE */}
                 <div className="flex flex-col items-center gap-1">
                     <button onClick={handleLike} className="group active:scale-75 transition-transform">
                         <div className={`p-3 backdrop-blur-md rounded-full border transition-all ${liked ? 'bg-red-500/20 border-red-500' : 'bg-black/20 border-white/20'}`}>
@@ -186,23 +170,14 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
                     </button>
                     <span className="text-xs font-bold text-white shadow-black drop-shadow-md">{likeCount}</span>
                 </div>
-
-                {/* SHARE */}
                 <ActionButton icon={<Share2 size={24} />} label="Share" onClick={handleShare} />
-                
-                {/* COMMENTS */}
                 <ActionButton icon={<MessageCircle size={24} />} label="Comments" onClick={() => setShowComments(true)} />
             </div>
-
-            {/* COMMENT MODAL */}
-            {showComments && (
-                <CommentModal postId={post.id} onClose={() => setShowComments(false)} />
-            )}
+            {showComments && <CommentModal postId={post.id} onClose={() => setShowComments(false)} />}
         </div>
     );
 }
 
-// --- COMMENT MODAL (FIXED Z-INDEX) ---
 function CommentModal({ postId, onClose }: { postId: string, onClose: () => void }) {
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState('');
@@ -216,7 +191,6 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
                 .select('*, profiles(full_name, avatar_url, is_admin)')
                 .eq('post_id', postId)
                 .order('created_at', { ascending: false }); 
-            // Force Cast to avoid TS error on 'profiles' structure
             if (data) setComments(data as any);
             setLoading(false);
         };
@@ -227,12 +201,7 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
         if (!newComment.trim()) return;
         setSending(true);
         const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-            window.dispatchEvent(new Event('open-auth'));
-            setSending(false);
-            return;
-        }
+        if (!user) { window.dispatchEvent(new Event('open-auth')); setSending(false); return; }
 
         const { error } = await supabase.from('feed_comments').insert({
             post_id: postId,
@@ -255,14 +224,10 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
     return (
         <div className="absolute inset-0 z-[100] flex flex-col justify-end bg-black/60 animate-in fade-in duration-200">
             <div className="h-[65vh] bg-white rounded-t-3xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300 shadow-2xl">
-                
-                {/* Header */}
                 <div className="p-4 border-b flex justify-between items-center bg-gray-50">
                     <h3 className="font-bold text-gray-800">Comments ({comments.length})</h3>
                     <button onClick={onClose} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition"><X size={16} className="text-gray-600"/></button>
                 </div>
-
-                {/* List */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {loading ? (
                         <div className="flex justify-center p-4"><Loader2 className="animate-spin text-gray-400"/></div>
@@ -272,20 +237,12 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
                         comments.map(c => (
                             <div key={c.id} className="flex gap-3 animate-in slide-in-from-bottom-2 fade-in duration-300">
                                 <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden shrink-0 border border-gray-200">
-                                    {c.profiles?.avatar_url ? (
-                                        <img src={c.profiles.avatar_url} className="w-full h-full object-cover"/>
-                                    ) : (
-                                        <User className="p-1 w-full h-full text-gray-400"/>
-                                    )}
+                                    {c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} className="w-full h-full object-cover"/> : <User className="p-1 w-full h-full text-gray-400"/>}
                                 </div>
                                 <div className="flex-1 bg-gray-50 p-3 rounded-2xl rounded-tl-none text-sm border border-gray-100">
                                     <div className="flex items-center gap-1 mb-1">
                                         <span className="font-bold text-xs text-gray-900">{c.profiles?.full_name || 'User'}</span>
-                                        {c.profiles?.is_admin && (
-                                            <span className="bg-blue-100 text-blue-600 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                                <ShieldCheck size={10}/> Admin
-                                            </span>
-                                        )}
+                                        {c.profiles?.is_admin && <span className="bg-blue-100 text-blue-600 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5"><ShieldCheck size={10}/> Admin</span>}
                                     </div>
                                     <p className="text-gray-700 leading-snug">{c.content}</p>
                                 </div>
@@ -293,9 +250,7 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
                         ))
                     )}
                 </div>
-
-                {/* Input Area */}
-                <div className="p-3 border-t bg-gray-50 flex gap-2 items-center">
+                <div className="p-3 border-t bg-gray-50 flex gap-2 items-center pb-24 md:pb-4">
                     <input 
                         value={newComment}
                         onChange={e => setNewComment(e.target.value)}
@@ -315,7 +270,6 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
     );
 }
 
-// --- EXISTING COMPONENTS (Carousel, Video, Button) - Unchanged ---
 function ImageCarousel({ post, isVisible, onComplete }: { post: FeedPost, isVisible: boolean, onComplete: () => void }) {
     const images = post.images || [];
     const [activeIndex, setActiveIndex] = useState(0);
