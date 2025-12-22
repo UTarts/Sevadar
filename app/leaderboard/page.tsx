@@ -21,19 +21,22 @@ export default function LeaderboardPage() {
       .order('points', { ascending: false })
       .limit(50);
     
-    // --- RANKING LOGIC (Same Points = Same Rank) ---
+    // --- RANKING LOGIC (TypeScript Safe Version) ---
+    // We define 'users' strictly as an array to prevent TS errors
+    const users = topUsers || [];
     let currentRank = 1;
-    const rankedUsers = (topUsers || []).map((user, index) => {
-        // If points are less than previous, increment rank
-        if (index > 0 && user.points < topUsers![index - 1].points) {
-            currentRank = index + 1; // Competition Ranking (1, 1, 3)
+    
+    const rankedUsers = users.map((user, index) => {
+        // Safe access to previous user
+        if (index > 0 && user.points < users[index - 1].points) {
+            currentRank = index + 1;
         }
         return { ...user, ranking: currentRank };
     });
 
     setLeaders(rankedUsers);
 
-    // 2. Get My Rank (From the calculated list)
+    // 2. Get My Rank
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const myData = rankedUsers.find(u => u.id === user.id);

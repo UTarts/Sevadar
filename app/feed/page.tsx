@@ -1,11 +1,10 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { Loader2, Share2, Heart, Volume2, VolumeX, ArrowLeft, MessageCircle, X, Send, ShieldCheck, User, MoreVertical, Flag, AlertTriangle } from 'lucide-react';
+import { Loader2, Share2, Heart, Volume2, VolumeX, ArrowLeft, MessageCircle, X, Send, ShieldCheck, User } from 'lucide-react';
 import Link from 'next/link';
 import { useProfile } from '@/components/ProfileContext';
 
-// --- TYPES ---
 interface FeedPost {
   id: string;
   type: 'image' | 'video';
@@ -40,7 +39,8 @@ export default function FeedPage() {
         .select('*')
         .order('created_at', { ascending: false });
       
-      setPosts(data || []);
+      // Force TS to accept the data shape
+      setPosts((data as unknown as FeedPost[]) || []);
       setLoading(false);
     }
     fetchFeed();
@@ -69,7 +69,7 @@ export default function FeedPage() {
          </div>
       </div>
 
-      {/* Main Feed Container - REMOVED pb-20 to fix layout shift */}
+      {/* Main Feed Container */}
       <div 
         ref={containerRef}
         className="h-full w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar" 
@@ -216,7 +216,8 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
                 .select('*, profiles(full_name, avatar_url, is_admin)')
                 .eq('post_id', postId)
                 .order('created_at', { ascending: false }); 
-            if (data) setComments(data);
+            // Force Cast to avoid TS error on 'profiles' structure
+            if (data) setComments(data as any);
             setLoading(false);
         };
         fetchComments();
@@ -246,13 +247,12 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
                 .select('*, profiles(full_name, avatar_url, is_admin)')
                 .eq('post_id', postId)
                 .order('created_at', { ascending: false });
-            if (data) setComments(data);
+            if (data) setComments(data as any);
         }
         setSending(false);
     };
 
     return (
-        // KEY FIX: z-[100] puts this modal ABOVE the Bottom Nav Bar
         <div className="absolute inset-0 z-[100] flex flex-col justify-end bg-black/60 animate-in fade-in duration-200">
             <div className="h-[65vh] bg-white rounded-t-3xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300 shadow-2xl">
                 
@@ -294,8 +294,8 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
                     )}
                 </div>
 
-                {/* Input Area  */}
-                <div className="p-3 border-t bg-gray-50 flex gap-2 items-center pb-24 md:pb-4">
+                {/* Input Area */}
+                <div className="p-3 border-t bg-gray-50 flex gap-2 items-center">
                     <input 
                         value={newComment}
                         onChange={e => setNewComment(e.target.value)}
@@ -315,7 +315,7 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
     );
 }
 
-// --- EXISTING COMPONENTS (Carousel, Video, Button - Unchanged) ---
+// --- EXISTING COMPONENTS (Carousel, Video, Button) - Unchanged ---
 function ImageCarousel({ post, isVisible, onComplete }: { post: FeedPost, isVisible: boolean, onComplete: () => void }) {
     const images = post.images || [];
     const [activeIndex, setActiveIndex] = useState(0);

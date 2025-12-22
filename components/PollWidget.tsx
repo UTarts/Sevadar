@@ -32,7 +32,8 @@ export default function PollWidget() {
         .limit(1);
 
       if (polls && polls.length > 0) {
-        setPoll(polls[0]);
+        // Force Type Cast to handle DB changes safely
+        setPoll(polls[0] as any);
         if (!profile.is_admin) {
             checkIfUserVoted(polls[0].id);
         }
@@ -81,20 +82,19 @@ export default function PollWidget() {
     if (error) {
       if (error.message.includes('unique constraint') || error.message.includes('duplicate')) {
         alert("आप पहले ही वोट दे चुके हैं (You already voted!)");
-        setVotedOptionIdx(index); // Assume success to show UI
+        setVotedOptionIdx(index); 
       } else {
         alert("Error voting. Please try again.");
       }
     } else {
       setVotedOptionIdx(index);
       
-      // Award Points (Only if first time)
       if (!votedOptionIdx) {
           const newPoints = (profile.points || 0) + 5;
           updateProfile({ points: newPoints });
       }
 
-      // Optimistic Update: Increment local count to show result instantly
+      // Optimistic Update
       const newVotes = [...(poll.votes || [])];
       newVotes[index] = (newVotes[index] || 0) + 1;
       setPoll({ ...poll, votes: newVotes });
@@ -111,7 +111,6 @@ export default function PollWidget() {
 
   return (
     <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 relative overflow-hidden mb-6">
-      {/* Background Decor */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-full -mr-10 -mt-10 opacity-50 pointer-events-none" />
 
       {/* Header */}
@@ -182,7 +181,6 @@ export default function PollWidget() {
         })}
       </div>
       
-      {/* Footer Message */}
       {votedOptionIdx !== null && !profile.is_admin && (
         <div className="mt-4 text-center text-xs text-green-600 font-bold flex items-center justify-center gap-1 animate-in fade-in slide-in-from-bottom">
            <CheckCircle2 size={14} /> वोट देने के लिए धन्यवाद! (+5 Points Added)
