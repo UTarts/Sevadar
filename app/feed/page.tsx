@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { Loader2, Share2, Heart, Volume2, VolumeX, ArrowLeft, MoreVertical, Flag, AlertTriangle } from 'lucide-react';
+import { Loader2, Share2, Heart, Volume2, VolumeX, ArrowLeft, MessageCircle, X, Send, ShieldCheck, User } from 'lucide-react';
 import Link from 'next/link';
 import { useProfile } from '@/components/ProfileContext';
 
@@ -14,7 +14,18 @@ interface FeedPost {
   url: string;       
   images: string[]; 
   created_at: string;
-  likes: number;     // From DB
+  likes: number;
+}
+
+interface Comment {
+  id: string;
+  content: string;
+  created_at: string;
+  profiles: {
+    full_name: string;
+    avatar_url: string;
+    is_admin: boolean;
+  };
 }
 
 export default function FeedPage() {
@@ -89,12 +100,11 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
     const [isVisible, setIsVisible] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
     
-    // Like State
+    // States
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(post.likes || 0);
-    const [showOptions, setShowOptions] = useState(false);
+    const [showComments, setShowComments] = useState(false);
 
-    // 1. Intersection Observer (Is this post on screen?)
     useEffect(() => {
         const observer = new IntersectionObserver(([entry]) => {
             setIsVisible(entry.isIntersecting);
@@ -104,7 +114,6 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
         return () => observer.disconnect();
     }, []);
 
-    // 2. Check if already liked (On Load)
     useEffect(() => {
         const checkLike = async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -116,43 +125,42 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
         if (isVisible) checkLike();
     }, [isVisible, post.id]);
 
-    // 3. Handle Like
     const handleLike = async () => {
-        if (liked) return; // No unlike allowed
-        
+        if (liked) return; 
         setLiked(true);
         setLikeCount(prev => prev + 1);
         
-        // Optimistic UI update done, now save to DB
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-             window.dispatchEvent(new Event('open-auth'));
-             return; 
-        }
+        if (!user) { window.dispatchEvent(new Event('open-auth')); return; }
 
-        // Use the SQL function
         const { error } = await supabase.rpc('like_feed_post', { p_post_id: post.id });
-        if (!error) {
-            // Update local profile points
-            updateProfile({ points: (profile.points || 0) + 1 });
-        }
+        if (!error) updateProfile({ points: (profile.points || 0) + 1 });
     };
 
-    // 4. Handle Share
     const handleShare = async () => {
         const shareData = {
             title: "Mission 2029 - Sevadar",
             text: `${post.title}\n\n${post.description}\n\n📲 Download the App & Join the Mission:\nhttps://brijeshtiwari.in`,
             url: "https://brijeshtiwari.in"
         };
-        try {
-            if (navigator.share) {
+        
+        // Robust Fallback Logic
+        if (navigator.share) {
+            try {
                 await navigator.share(shareData);
-            } else {
-                navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
-                alert("Link copied to clipboard!");
+            } catch (err) {
+                // User cancelled or error -> Try clipboard
+                copyToClipboard(shareData.text);
             }
-        } catch (err) { console.log(err); }
+        } else {
+            copyToClipboard(shareData.text);
+        }
+    };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Link copied to clipboard! Share it anywhere.");
+        }).catch(() => alert("Could not copy link."));
     };
 
     return (
@@ -185,26 +193,132 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
                 {/* SHARE */}
                 <ActionButton icon={<Share2 size={24} />} label="Share" onClick={handleShare} />
                 
-                {/* OPTIONS */}
-                <div className="relative">
-                    <ActionButton icon={<MoreVertical size={24} />} label="" onClick={() => setShowOptions(!showOptions)} />
-                    {showOptions && (
-                        <div className="absolute bottom-0 right-12 w-32 bg-white rounded-xl shadow-xl overflow-hidden animate-in zoom-in origin-bottom-right">
-                            <button className="w-full text-left px-4 py-3 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                <Flag size={14}/> Report
-                            </button>
-                            <button className="w-full text-left px-4 py-3 text-xs font-bold text-gray-600 hover:bg-gray-50 flex items-center gap-2">
-                                <AlertTriangle size={14}/> Not Interested
-                            </button>
-                        </div>
+                {/* COMMENTS (Replaces Options) */}
+                <ActionButton icon={<MessageCircle size={24} />} label="Comments" onClick={() => setShowComments(true)} />
+            </div>
+
+            {/* COMMENT MODAL (Lazy Loaded) */}
+            {showComments && (
+                <CommentModal postId={post.id} onClose={() => setShowComments(false)} />
+            )}
+        </div>
+    );
+}
+
+// --- COMMENT MODAL (Lazy Loading for Performance) ---
+function CommentModal({ postId, onClose }: { postId: string, onClose: () => void }) {
+    const [comments, setComments] = useState<Comment[]>([]);
+    const [newComment, setNewComment] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [sending, setSending] = useState(false);
+
+    useEffect(() => {
+        const fetchComments = async () => {
+            const { data } = await supabase
+                .from('feed_comments')
+                .select('*, profiles(full_name, avatar_url, is_admin)')
+                .eq('post_id', postId)
+                .order('created_at', { ascending: false }); // Newest first
+            if (data) setComments(data);
+            setLoading(false);
+        };
+        fetchComments();
+    }, [postId]);
+
+    const handleSubmit = async () => {
+        if (!newComment.trim()) return;
+        setSending(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+            window.dispatchEvent(new Event('open-auth'));
+            setSending(false);
+            return;
+        }
+
+        const { error } = await supabase.from('feed_comments').insert({
+            post_id: postId,
+            user_id: user.id,
+            content: newComment
+        });
+
+        if (!error) {
+            setNewComment('');
+            // Refresh logic (simple refetch for consistency)
+            const { data } = await supabase
+                .from('feed_comments')
+                .select('*, profiles(full_name, avatar_url, is_admin)')
+                .eq('post_id', postId)
+                .order('created_at', { ascending: false });
+            if (data) setComments(data);
+        }
+        setSending(false);
+    };
+
+    return (
+        <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/60 animate-in fade-in duration-200">
+            <div className="h-[60vh] bg-white rounded-t-3xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300">
+                
+                {/* Header */}
+                <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+                    <h3 className="font-bold text-gray-800">Comments ({comments.length})</h3>
+                    <button onClick={onClose} className="p-2 bg-gray-200 rounded-full"><X size={16} className="text-gray-600"/></button>
+                </div>
+
+                {/* List */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {loading ? (
+                        <div className="flex justify-center p-4"><Loader2 className="animate-spin text-gray-400"/></div>
+                    ) : comments.length === 0 ? (
+                        <p className="text-center text-gray-400 text-sm mt-10">No comments yet. Be the first!</p>
+                    ) : (
+                        comments.map(c => (
+                            <div key={c.id} className="flex gap-3">
+                                <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden shrink-0 border border-gray-200">
+                                    {c.profiles?.avatar_url ? (
+                                        <img src={c.profiles.avatar_url} className="w-full h-full object-cover"/>
+                                    ) : (
+                                        <User className="p-1 w-full h-full text-gray-400"/>
+                                    )}
+                                </div>
+                                <div className="flex-1 bg-gray-50 p-2 rounded-xl rounded-tl-none text-sm">
+                                    <div className="flex items-center gap-1 mb-1">
+                                        <span className="font-bold text-xs text-gray-900">{c.profiles?.full_name || 'User'}</span>
+                                        {c.profiles?.is_admin && (
+                                            <span className="bg-blue-100 text-blue-600 text-[10px] font-bold px-1 rounded flex items-center gap-0.5">
+                                                <ShieldCheck size={10}/> Admin
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-gray-700 leading-snug">{c.content}</p>
+                                </div>
+                            </div>
+                        ))
                     )}
+                </div>
+
+                {/* Input */}
+                <div className="p-3 border-t bg-gray-50 flex gap-2 items-center">
+                    <input 
+                        value={newComment}
+                        onChange={e => setNewComment(e.target.value)}
+                        placeholder="Add a comment..."
+                        className="flex-1 bg-white border border-gray-300 rounded-full px-4 py-2 text-sm outline-none focus:border-blue-500"
+                    />
+                    <button 
+                        onClick={handleSubmit} 
+                        disabled={sending || !newComment.trim()}
+                        className="p-2.5 bg-blue-600 rounded-full text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {sending ? <Loader2 size={18} className="animate-spin"/> : <Send size={18}/>}
+                    </button>
                 </div>
             </div>
         </div>
     );
 }
 
-// --- COMPONENT: WHATSAPP STYLE IMAGE CAROUSEL (With Swipe & Fixes) ---
+// --- EXISTING COMPONENTS (Carousel, Video, Button) ---
 function ImageCarousel({ post, isVisible, onComplete }: { post: FeedPost, isVisible: boolean, onComplete: () => void }) {
     const images = post.images || [];
     const [activeIndex, setActiveIndex] = useState(0);
@@ -213,18 +327,12 @@ function ImageCarousel({ post, isVisible, onComplete }: { post: FeedPost, isVisi
     const touchEndX = useRef(0);
     const DURATION = 5000;
 
-    // Reset when post changes
     useEffect(() => {
-        if (isVisible) {
-            setActiveIndex(0);
-            setProgress(0);
-        }
+        if (isVisible) { setActiveIndex(0); setProgress(0); }
     }, [isVisible, post.id]);
 
-    // Timer Logic
     useEffect(() => {
         if (!isVisible || images.length === 0) return;
-
         const interval = setInterval(() => {
             setProgress(old => {
                 if (old >= 100) {
@@ -240,13 +348,11 @@ function ImageCarousel({ post, isVisible, onComplete }: { post: FeedPost, isVisi
                 return old + (100 / (DURATION / 100));
             });
         }, 100);
-
         return () => clearInterval(interval);
     }, [isVisible, activeIndex, images.length]);
 
-    // Manual Navigation (Tap/Swipe)
     const navigate = (direction: 'next' | 'prev') => {
-        setProgress(0); // Essential: Reset timer immediately
+        setProgress(0);
         if (direction === 'prev') {
             setActiveIndex(prev => Math.max(0, prev - 1));
         } else {
@@ -258,44 +364,31 @@ function ImageCarousel({ post, isVisible, onComplete }: { post: FeedPost, isVisi
         }
     };
 
-    // Touch Handlers
     const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.targetTouches[0].clientX; };
     const onTouchEnd = (e: React.TouchEvent) => {
         touchEndX.current = e.changedTouches[0].clientX;
-        if (touchStartX.current - touchEndX.current > 50) navigate('next'); // Swipe Left
-        if (touchStartX.current - touchEndX.current < -50) navigate('prev'); // Swipe Right
+        if (touchStartX.current - touchEndX.current > 50) navigate('next');
+        if (touchStartX.current - touchEndX.current < -50) navigate('prev');
     };
 
     return (
-        <div 
-            className="relative w-full h-full"
-            onTouchStart={onTouchStart}
-            onTouchEnd={onTouchEnd}
-        >
-            {/* Progress Bars */}
+        <div className="relative w-full h-full" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
             {images.length > 1 && (
                 <div className="absolute top-16 inset-x-2 flex gap-1 z-30">
                     {images.map((_, i) => (
                         <div key={i} className="h-1 flex-1 bg-white/30 rounded-full overflow-hidden">
-                            <div 
-                                className="h-full bg-white transition-all ease-linear"
-                                style={{ width: i < activeIndex ? '100%' : i === activeIndex ? `${progress}%` : '0%' }} 
-                            />
+                            <div className="h-full bg-white transition-all ease-linear" style={{ width: i < activeIndex ? '100%' : i === activeIndex ? `${progress}%` : '0%' }} />
                         </div>
                     ))}
                 </div>
             )}
-
-            {/* Tap Zones (Desktop/Click fallback) */}
             <div className="absolute inset-y-0 left-0 w-1/4 z-20" onClick={() => navigate('prev')} />
             <div className="absolute inset-y-0 right-0 w-1/4 z-20" onClick={() => navigate('next')} />
-
             <img src={images[activeIndex]} className="w-full h-full object-cover" alt="Post" />
         </div>
     );
 }
 
-// --- COMPONENT: SMART VIDEO PLAYER (YouTube + Native) ---
 function SmartVideoPlayer({ post, isVisible, onComplete }: { post: FeedPost, isVisible: boolean, onComplete: () => void }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [muted, setMuted] = useState(true);
@@ -303,7 +396,6 @@ function SmartVideoPlayer({ post, isVisible, onComplete }: { post: FeedPost, isV
     const [ytId, setYtId] = useState('');
 
     useEffect(() => {
-        // Detect YouTube
         if (post.url && (post.url.includes('youtube.com') || post.url.includes('youtu.be'))) {
             setIsYouTube(true);
             const match = post.url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([\w-]{11})/);
@@ -313,7 +405,6 @@ function SmartVideoPlayer({ post, isVisible, onComplete }: { post: FeedPost, isV
         }
     }, [post.url]);
 
-    // Native Video Logic
     useEffect(() => {
         if (!isYouTube && videoRef.current) {
             if (isVisible) {
@@ -327,17 +418,14 @@ function SmartVideoPlayer({ post, isVisible, onComplete }: { post: FeedPost, isV
 
     return (
         <div className="relative w-full h-full bg-black flex items-center justify-center">
-            
             {isYouTube && ytId ? (
-                // YouTube Iframe (Shorts Optimized)
                 <iframe
                     src={`https://www.youtube.com/embed/${ytId}?autoplay=${isVisible ? 1 : 0}&mute=${muted ? 1 : 0}&controls=0&loop=1&playlist=${ytId}&playsinline=1&rel=0&modestbranding=1&showinfo=0`}
-                    className="w-full h-[120%] scale-110 pointer-events-none" // Scale to hide UI
+                    className="w-full h-[120%] scale-110 pointer-events-none"
                     allow="autoplay; encrypted-media"
                     title="Video"
                 />
             ) : (
-                // Native Video
                 <video
                     ref={videoRef}
                     src={post.url}
@@ -349,12 +437,7 @@ function SmartVideoPlayer({ post, isVisible, onComplete }: { post: FeedPost, isV
                     onClick={() => setMuted(!muted)}
                 />
             )}
-
-            {/* Mute/Unmute Button (Works for both) */}
-            <button 
-                onClick={(e) => { e.stopPropagation(); setMuted(!muted); }} 
-                className="absolute top-20 right-4 z-40 p-2 bg-black/40 rounded-full backdrop-blur-sm border border-white/10"
-            >
+            <button onClick={(e) => { e.stopPropagation(); setMuted(!muted); }} className="absolute top-20 right-4 z-40 p-2 bg-black/40 rounded-full backdrop-blur-sm border border-white/10">
                 {muted ? <VolumeX size={20} className="text-white"/> : <Volume2 size={20} className="text-white"/>}
             </button>
         </div>
