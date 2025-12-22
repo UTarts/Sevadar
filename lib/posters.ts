@@ -55,3 +55,9 @@ export async function getGeneralPosters() {
   const allPosters = await getPosters();
   return allPosters.filter(p => p.type === 'general');
 }
+
+// ADDED THIS SO CREATE PAGE DOESN'T CRASH
+export async function getPosterById(id: string) {
+  const allPosters = await getPosters();
+  return allPosters.find(p => p.id === id);
+}

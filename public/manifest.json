@@ -3,9 +3,11 @@
   "short_name": "Sevadar",
   "description": "Jai Bharat, Jai Pratapgarh - Official App of Brijesh Tiwari for Mission 2029, Loksabha Pratapgarh.",
   "start_url": "/",
+  "orientation": "portrait",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#FF9933",
+  
   "icons": [
     {
       "src": "/posters/icon.png",

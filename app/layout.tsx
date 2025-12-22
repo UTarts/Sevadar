@@ -22,10 +22,9 @@ const kalam = Kalam({
 });
 
 export const metadata: Metadata = {
-  title: "Mission 2029 - सेवादार प्रतापगढ़",
-  description: "जय भारत जय प्रतापगढ़। बृजेश तिवारी के नेतृत्व में लोकसभा चुनाव 2029 के लिए मिशन सेवादार।",
+  title: "Mission 2029",
+  description: "Jai Bharat, Jai Pratapgarh",
   manifest: "/manifest.json", 
-  themeColor: "#FF9933",
 };
 
 export const viewport: Viewport = {
