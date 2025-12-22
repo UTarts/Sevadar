@@ -12,7 +12,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const { updateProfile, t, language, setLanguage } = useProfile();
   
   const [view, setView] = useState<'language' | 'auth'>('language'); 
-  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login');
+  // CHANGED: Default is now 'signup'
+  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('signup');
   
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -36,7 +37,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
          if (upErr) throw upErr;
          if (data.user) {
              await supabase.from('profiles').update({ secret_question: form.secretQ, secret_answer: secretA.toLowerCase().trim(), phone: phone }).eq('id', data.user.id);
-             // New users are never admins by default
              updateProfile({ name: '', photo: null, setup_complete: false, is_admin: false }); 
              onClose();
          }
@@ -54,16 +54,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                      village: p.village, 
                      photo: p.avatar_url, 
                      setup_complete: p.setup_complete,
-                     is_admin: p.is_admin === true // Check DB flag
+                     is_admin: p.is_admin === true 
                  });
                  onClose();
-                 
-                 // --- VITAL REDIRECT LOGIC ---
-                 if (p.is_admin) {
-                     router.push('/admin'); // Admin goes to Dashboard
-                 } else {
-                     router.push('/'); // Normal user goes Home
-                 }
+                 if (p.is_admin) router.push('/admin'); 
+                 else router.push('/'); 
              }
          }
       }
@@ -87,7 +82,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
       <div className="relative w-full max-w-sm bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
         
-        {/* VIEW 1: LANGUAGE */}
         {view === 'language' && (
             <div className="p-8 text-center space-y-6">
                 <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-2"><Languages size={32} /></div>
@@ -100,7 +94,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             </div>
         )}
 
-        {/* VIEW 2: AUTH */}
         {view === 'auth' && (
             <>
                 <div className="bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 p-8 text-white relative">
@@ -115,7 +108,19 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     <div className="space-y-1"><div className="flex justify-between px-2"><label className="text-xs font-bold text-gray-400">PASSWORD</label>{mode === 'login' && <button onClick={() => setMode('reset')} className="text-xs font-bold text-orange-600">Forgot?</button>}</div><div className="flex items-center bg-gray-50 rounded-2xl px-4 py-3 border border-gray-100"><input type={showPass ? "text" : "password"} className="bg-transparent w-full font-bold text-lg outline-none" value={mode === 'reset' ? form.newPass : form.password} onChange={e => setForm(mode === 'reset' ? {...form, newPass: e.target.value} : {...form, password: e.target.value})} /><button onClick={() => setShowPass(!showPass)}>{showPass ? <EyeOff size={20} className="text-gray-400"/> : <Eye size={20} className="text-gray-400"/>}</button></div></div>
                     {error && <div className="text-red-500 text-xs font-bold text-center bg-red-50 p-2 rounded-xl">{error}</div>}
                     <button onClick={handleAuth} disabled={loading} className="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold text-lg flex justify-center items-center gap-2">{loading ? <Loader2 className="animate-spin" /> : (mode === 'login' ? t.login : mode === 'signup' ? t.create_now : t.save)}</button>
-                    <div className="text-center"><p className="text-xs font-bold text-gray-400">{mode === 'login' ? <button onClick={() => setMode('signup')} className="text-orange-600 hover:underline">{t.create_now}</button> : <button onClick={() => setMode('login')} className="text-orange-600 hover:underline">{t.login}</button>}</p></div>
+                    
+                    {/* CHANGED: Toggles made bigger and clearer */}
+                    <div className="text-center pt-2">
+                        {mode === 'login' ? (
+                            <p className="text-sm text-gray-500 font-bold">
+                                Don't have an account? <button onClick={() => setMode('signup')} className="text-orange-600 hover:underline font-extrabold text-base ml-1">{t.create_now}</button>
+                            </p>
+                        ) : (
+                            <p className="text-sm text-gray-500 font-bold">
+                                Already have an account? <button onClick={() => setMode('login')} className="text-orange-600 hover:underline font-extrabold text-base ml-1">{t.login} Now</button>
+                            </p>
+                        )}
+                    </div>
                 </div>
             </>
         )}

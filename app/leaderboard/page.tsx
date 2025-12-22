@@ -21,11 +21,19 @@ export default function LeaderboardPage() {
       .order('points', { ascending: false })
       .limit(50);
     
-    // Add Ranks
-    const rankedUsers = (topUsers || []).map((u, index) => ({ ...u, ranking: index + 1 }));
+    // --- RANKING LOGIC (Same Points = Same Rank) ---
+    let currentRank = 1;
+    const rankedUsers = (topUsers || []).map((user, index) => {
+        // If points are less than previous, increment rank
+        if (index > 0 && user.points < topUsers![index - 1].points) {
+            currentRank = index + 1; // Competition Ranking (1, 1, 3)
+        }
+        return { ...user, ranking: currentRank };
+    });
+
     setLeaders(rankedUsers);
 
-    // 2. Get My Rank
+    // 2. Get My Rank (From the calculated list)
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const myData = rankedUsers.find(u => u.id === user.id);

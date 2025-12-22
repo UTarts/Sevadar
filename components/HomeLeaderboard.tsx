@@ -11,17 +11,22 @@ export default function HomeLeaderboard() {
 
   useEffect(() => {
     async function fetchTop10() {
-        // Fetch Top 10 Users (Excluding Admins)
         const { data } = await supabase
             .from('profiles')
             .select('id, full_name, avatar_url, points')
             .eq('is_admin', false)
             .order('points', { ascending: false })
-            .limit(10); // <--- Top 10
+            .limit(10);
         
         if (data) {
-            // Add ranking numbers manually
-            const ranked = data.map((u, i) => ({ ...u, ranking: i + 1 }));
+            // Ranking Logic: Ties get same rank
+            let currentRank = 1;
+            const ranked = data.map((u, i) => {
+                if (i > 0 && u.points < data[i-1].points) {
+                    currentRank = i + 1;
+                }
+                return { ...u, ranking: currentRank };
+            });
             setLeaders(ranked);
         }
     }

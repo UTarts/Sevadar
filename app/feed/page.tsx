@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { Loader2, Share2, Heart, Volume2, VolumeX, ArrowLeft, MessageCircle, X, Send, ShieldCheck, User } from 'lucide-react';
+import { Loader2, Share2, Heart, Volume2, VolumeX, ArrowLeft, MessageCircle, X, Send, ShieldCheck, User, MoreVertical, Flag, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useProfile } from '@/components/ProfileContext';
 
@@ -69,10 +69,10 @@ export default function FeedPage() {
          </div>
       </div>
 
-      {/* Main Feed Container */}
+      {/* Main Feed Container - REMOVED pb-20 to fix layout shift */}
       <div 
         ref={containerRef}
-        className="h-full w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar"
+        className="h-full w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar" 
       >
         {posts.length === 0 ? (
            <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-4">
@@ -144,12 +144,10 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
             url: "https://brijeshtiwari.in"
         };
         
-        // Robust Fallback Logic
         if (navigator.share) {
             try {
                 await navigator.share(shareData);
             } catch (err) {
-                // User cancelled or error -> Try clipboard
                 copyToClipboard(shareData.text);
             }
         } else {
@@ -179,7 +177,6 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
 
             {/* Right Side Actions */}
             <div className="absolute bottom-24 right-3 z-30 flex flex-col gap-6 items-center">
-                
                 {/* LIKE */}
                 <div className="flex flex-col items-center gap-1">
                     <button onClick={handleLike} className="group active:scale-75 transition-transform">
@@ -193,11 +190,11 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
                 {/* SHARE */}
                 <ActionButton icon={<Share2 size={24} />} label="Share" onClick={handleShare} />
                 
-                {/* COMMENTS (Replaces Options) */}
+                {/* COMMENTS */}
                 <ActionButton icon={<MessageCircle size={24} />} label="Comments" onClick={() => setShowComments(true)} />
             </div>
 
-            {/* COMMENT MODAL (Lazy Loaded) */}
+            {/* COMMENT MODAL */}
             {showComments && (
                 <CommentModal postId={post.id} onClose={() => setShowComments(false)} />
             )}
@@ -205,7 +202,7 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
     );
 }
 
-// --- COMMENT MODAL (Lazy Loading for Performance) ---
+// --- COMMENT MODAL (FIXED Z-INDEX) ---
 function CommentModal({ postId, onClose }: { postId: string, onClose: () => void }) {
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState('');
@@ -218,7 +215,7 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
                 .from('feed_comments')
                 .select('*, profiles(full_name, avatar_url, is_admin)')
                 .eq('post_id', postId)
-                .order('created_at', { ascending: false }); // Newest first
+                .order('created_at', { ascending: false }); 
             if (data) setComments(data);
             setLoading(false);
         };
@@ -244,7 +241,6 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
 
         if (!error) {
             setNewComment('');
-            // Refresh logic (simple refetch for consistency)
             const { data } = await supabase
                 .from('feed_comments')
                 .select('*, profiles(full_name, avatar_url, is_admin)')
@@ -256,13 +252,14 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
     };
 
     return (
-        <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/60 animate-in fade-in duration-200">
-            <div className="h-[60vh] bg-white rounded-t-3xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300">
+        // KEY FIX: z-[100] puts this modal ABOVE the Bottom Nav Bar
+        <div className="absolute inset-0 z-[100] flex flex-col justify-end bg-black/60 animate-in fade-in duration-200">
+            <div className="h-[65vh] bg-white rounded-t-3xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300 shadow-2xl">
                 
                 {/* Header */}
                 <div className="p-4 border-b flex justify-between items-center bg-gray-50">
                     <h3 className="font-bold text-gray-800">Comments ({comments.length})</h3>
-                    <button onClick={onClose} className="p-2 bg-gray-200 rounded-full"><X size={16} className="text-gray-600"/></button>
+                    <button onClick={onClose} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition"><X size={16} className="text-gray-600"/></button>
                 </div>
 
                 {/* List */}
@@ -273,7 +270,7 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
                         <p className="text-center text-gray-400 text-sm mt-10">No comments yet. Be the first!</p>
                     ) : (
                         comments.map(c => (
-                            <div key={c.id} className="flex gap-3">
+                            <div key={c.id} className="flex gap-3 animate-in slide-in-from-bottom-2 fade-in duration-300">
                                 <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden shrink-0 border border-gray-200">
                                     {c.profiles?.avatar_url ? (
                                         <img src={c.profiles.avatar_url} className="w-full h-full object-cover"/>
@@ -281,11 +278,11 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
                                         <User className="p-1 w-full h-full text-gray-400"/>
                                     )}
                                 </div>
-                                <div className="flex-1 bg-gray-50 p-2 rounded-xl rounded-tl-none text-sm">
+                                <div className="flex-1 bg-gray-50 p-3 rounded-2xl rounded-tl-none text-sm border border-gray-100">
                                     <div className="flex items-center gap-1 mb-1">
                                         <span className="font-bold text-xs text-gray-900">{c.profiles?.full_name || 'User'}</span>
                                         {c.profiles?.is_admin && (
-                                            <span className="bg-blue-100 text-blue-600 text-[10px] font-bold px-1 rounded flex items-center gap-0.5">
+                                            <span className="bg-blue-100 text-blue-600 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
                                                 <ShieldCheck size={10}/> Admin
                                             </span>
                                         )}
@@ -297,18 +294,18 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
                     )}
                 </div>
 
-                {/* Input */}
-                <div className="p-3 border-t bg-gray-50 flex gap-2 items-center">
+                {/* Input Area  */}
+                <div className="p-3 border-t bg-gray-50 flex gap-2 items-center pb-24 md:pb-4">
                     <input 
                         value={newComment}
                         onChange={e => setNewComment(e.target.value)}
                         placeholder="Add a comment..."
-                        className="flex-1 bg-white border border-gray-300 rounded-full px-4 py-2 text-sm outline-none focus:border-blue-500"
+                        className="flex-1 bg-white border border-gray-300 rounded-full px-4 py-3 text-sm outline-none focus:border-blue-500 shadow-sm"
                     />
                     <button 
                         onClick={handleSubmit} 
                         disabled={sending || !newComment.trim()}
-                        className="p-2.5 bg-blue-600 rounded-full text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-3 bg-blue-600 rounded-full text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-md active:scale-90 transition-transform"
                     >
                         {sending ? <Loader2 size={18} className="animate-spin"/> : <Send size={18}/>}
                     </button>
@@ -318,7 +315,7 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
     );
 }
 
-// --- EXISTING COMPONENTS (Carousel, Video, Button) ---
+// --- EXISTING COMPONENTS (Carousel, Video, Button - Unchanged) ---
 function ImageCarousel({ post, isVisible, onComplete }: { post: FeedPost, isVisible: boolean, onComplete: () => void }) {
     const images = post.images || [];
     const [activeIndex, setActiveIndex] = useState(0);
