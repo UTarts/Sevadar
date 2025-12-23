@@ -130,15 +130,58 @@ function FeedItem({ post, index, onComplete }: { post: FeedPost, index: number, 
     };
 
     const handleShare = async () => {
-        const shareData = {
-            title: "Mission 2029 - Sevadar",
-            text: `${post.title}\n\n${post.description}\n\n📲 Download the App & Join the Mission:\nhttps://brijeshtiwari.in`,
-            url: "https://brijeshtiwari.in"
-        };
-        if (navigator.share) {
-            try { await navigator.share(shareData); } catch (err) { copyToClipboard(shareData.text); }
-        } else {
-            copyToClipboard(shareData.text);
+        // 1. Prepare Text
+        const shareText = `${post.title}\n\n${post.description}\n\n📲 *Join Mission 2029 - Sevadar:*\nhttps://brijeshtiwari.in`;
+        
+        try {
+            // 2. Determine Image to Share
+            let imageUrl = '';
+            if (post.type === 'image' && post.images && post.images.length > 0) {
+                imageUrl = post.images[0];
+            } else if (post.type === 'video' && post.url) {
+                // Try to get YouTube Thumbnail
+                if (post.url.includes('youtu')) {
+                    const match = post.url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([\w-]{11})/);
+                    if (match) imageUrl = `https://img.youtube.com/vi/${match[1]}/0.jpg`;
+                }
+            }
+
+            // 3. If we have an image, try to share it as a FILE (The "Facebook Style" Share)
+            if (imageUrl && navigator.canShare && navigator.share) {
+                try {
+                    const response = await fetch(imageUrl);
+                    const blob = await response.blob();
+                    const file = new File([blob], 'post.jpg', { type: 'image/jpeg' });
+                    
+                    const shareData = {
+                        files: [file],
+                        title: post.title,
+                        text: shareText,
+                        // Note: Some apps (like WhatsApp) ignore 'url' if 'files' are present, so we keep the link in 'text'
+                    };
+
+                    if (navigator.canShare(shareData)) {
+                        await navigator.share(shareData);
+                        return; // Success!
+                    }
+                } catch (e) {
+                    console.log("Image share failed, falling back to text", e);
+                }
+            }
+
+            // 4. Fallback: Share Text & Link Only (If image fails or not supported)
+            if (navigator.share) {
+                await navigator.share({
+                    title: post.title,
+                    text: shareText,
+                    url: "https://brijeshtiwari.in"
+                });
+            } else {
+                copyToClipboard(shareText);
+            }
+
+        } catch (err) {
+            copyToClipboard(shareText);
         }
     };
 

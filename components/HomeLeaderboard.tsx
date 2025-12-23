@@ -19,11 +19,10 @@ export default function HomeLeaderboard() {
             .limit(10);
         
         if (data) {
-            // Ranking Logic: Ties get same rank
             let currentRank = 1;
             const ranked = data.map((u, i) => {
                 if (i > 0 && u.points < data[i-1].points) {
-                    currentRank = i + 1;
+                    currentRank++; 
                 }
                 return { ...u, ranking: currentRank };
             });

@@ -13,30 +13,27 @@ export default function LeaderboardPage() {
   }, []);
 
   const fetchLeaderboard = async () => {
-    // 1. Get Top 50 (No Admins)
     const { data: topUsers } = await supabase
       .from('profiles')
       .select('id, full_name, village, avatar_url, points')
       .eq('is_admin', false)
       .order('points', { ascending: false })
-      .limit(50);
+      .limit(100);
     
-    // --- RANKING LOGIC (TypeScript Safe Version) ---
-    // We define 'users' strictly as an array to prevent TS errors
+    // --- DENSE RANKING LOGIC  ---
     const users = topUsers || [];
     let currentRank = 1;
     
     const rankedUsers = users.map((user, index) => {
-        // Safe access to previous user
         if (index > 0 && user.points < users[index - 1].points) {
-            currentRank = index + 1;
+            currentRank++; 
         }
         return { ...user, ranking: currentRank };
     });
 
     setLeaders(rankedUsers);
 
-    // 2. Get My Rank
+    // My Rank
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const myData = rankedUsers.find(u => u.id === user.id);
