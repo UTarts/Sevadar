@@ -64,22 +64,61 @@ export const translations = {
     explore: "Explore",
     location: "Location",
     directions: "Get Directions",
-    
-    // Apna Pratapgarh Grid
     villages: "Villages",
     police_stations: "Police Stations",
     municipality: "Municipality",
     blocks: "Blocks",
-    polling_stations: "Polling Booths",
-
-    // Exit Popup
+    polling_stations: "Polling Stations",
     exit_app: "Exit App?",
     exit_confirm: "Are you sure you want to close the app?",
     exit_yes: "Yes, Exit",
     exit_no: "No, Stay",
+    powered_by: "Powered by UT Studio",
+
+    // --- AUTH & SECURITY ---
+    phone_number: "Phone Number",
+    password: "Password",
+    forgot_password: "Forgot Password?",
+    security_hint: "Write your mother's village name. This will be used for account recovery in case you forget your password.",
+    secret_question_label: "Security Answer (Mother's Village)",
+    recover_account: "Recover Account",
+    set_new_password: "Set New Password",
+    verify_answer: "Verify Answer",
+    update_password: "Update Password",
+    enter_phone: "Enter Phone Number",
+    enter_password: "Enter Password",
+    confirm_password: "Confirm Password",
     
-    // Static Footer
-    powered_by: "Powered by UT Arts"
+    // --- PROFILE NEW KEYS ---
+    current_rank: "Current Rank",
+    next_rank: "Next",
+    designation: "Designation",
+    switch_language: "Switch Language",
+    switch_hindi: "Switch to Hindi",
+    switch_english: "Switch to English",
+    faq_title: "Frequently Asked Questions",
+    
+    // --- FAQS ---
+    faq_1_q: "How can I earn points?",
+    faq_1_a: "You can earn points in many ways: 10 points for creating a poster (only on Festival days), 5 points for voting in a Poll, 5 points for answering the Daily Quiz correctly, and 1 point each for liking, sharing, or commenting on a Feed post.",
+    
+    faq_2_q: "How do I edit my profile details?",
+    faq_2_a: "Go to the Profile page and click the 'Edit Profile' (Pencil) icon at the top right. You can change your Name, Village, and Designation there.",
+    
+    faq_3_q: "My name translates wrong in Hindi on posters. What to do?",
+    faq_3_a: "Translation can sometimes be imperfect. The best solution is to edit your Profile and enter your name directly in Hindi. Alternatively, you can manually type your name in Hindi while creating the poster.",
+    
+    faq_4_q: "Is the app free to use?",
+    faq_4_a: "Yes! Sevadar is completely free for all users to create posters, participate in polls, and connect with the community.",
+    
+    faq_5_q: "How do I change my profile photo?",
+    faq_5_a: "On your Profile page, tap the camera icon on your profile picture to upload a new photo. You can crop it to fit perfectly.",
+    
+    faq_6_q: "What is the 'Leaderboard'?",
+    faq_6_a: "The Leaderboard shows the top contributors in Pratapgarh. Earn more points to increase your rank and get featured on the top list.",
+    
+    faq_7_q: "I forgot my password. How to reset?",
+    faq_7_a: "On the Login screen, click 'Forgot Password?'. You will need to enter your Phone Number and the answer to your Security Question (Mother's Village Name) to reset it."
   },
   hi: {
     home: "होम",
@@ -146,21 +185,60 @@ export const translations = {
     explore: "देखें",
     location: "स्थान",
     directions: "दिशा देखें",
-    
-    // Apna Pratapgarh Grid
     villages: "गाँव",
     police_stations: "पुलिस स्टेशन",
     municipality: "नगर पालिका",
     blocks: "ब्लॉक",
     polling_stations: "मतदान केंद्र",
-
-    // Exit Popup
     exit_app: "ऐप बंद करें?",
     exit_confirm: "क्या आप ऐप से बाहर निकलना चाहते हैं?",
     exit_yes: "हाँ, बंद करें",
     exit_no: "नहीं, रुकें",
+    powered_by: "पावर्ड बाय UT स्टूडियो",
 
-    // Static Footer
-    powered_by: "पावर्ड बाय UT Arts"
+    // --- AUTH & SECURITY ---
+    phone_number: "मोबाइल नंबर",
+    password: "पासवर्ड",
+    forgot_password: "पासवर्ड भूल गए?",
+    security_hint: "अपनी माता जी के गाँव का नाम लिखें। यदि आप अपना पासवर्ड भूल जाते हैं, तो इसका उपयोग खाता रिकवर करने के लिए किया जाएगा।",
+    secret_question_label: "सुरक्षा उत्तर (माता जी का गाँव)",
+    recover_account: "खाता रिकवर करें",
+    set_new_password: "नया पासवर्ड सेट करें",
+    verify_answer: "उत्तर सत्यापित करें",
+    update_password: "पासवर्ड अपडेट करें",
+    enter_phone: "मोबाइल नंबर दर्ज करें",
+    enter_password: "पासवर्ड दर्ज करें",
+    confirm_password: "पासवर्ड की पुष्टि करें",
+
+    // --- PROFILE NEW KEYS ---
+    current_rank: "वर्तमान रैंक",
+    next_rank: "अगला",
+    designation: "पद / Designation",
+    switch_language: "भाषा बदलें",
+    switch_hindi: "हिंदी में बदलें",
+    switch_english: "अंग्रेजी में बदलें",
+    faq_title: "अक्सर पूछे जाने वाले प्रश्न (FAQ)",
+
+    // --- FAQS ---
+    faq_1_q: "मैं अंक (Points) कैसे अर्जित कर सकता हूँ?",
+    faq_1_a: "आप कई तरीकों से अंक कमा सकते हैं: पोस्टर बनाने के लिए 10 अंक (केवल त्योहार के दिनों में), पोल में वोट करने के लिए 5 अंक, डेली क्विज़ का सही उत्तर देने के लिए 5 अंक, और फ़ीड पोस्ट को लाइक, शेयर या कमेंट करने के लिए 1 अंक।",
+    
+    faq_2_q: "मैं अपनी प्रोफाइल जानकारी कैसे बदलूं?",
+    faq_2_a: "प्रोफाइल पेज पर जाएं और ऊपर दाईं ओर 'एडिट प्रोफाइल' (पेंसिल) आइकन पर क्लिक करें। वहां आप अपना नाम, गाँव और पद बदल सकते हैं।",
+    
+    faq_3_q: "पोस्टर पर मेरा नाम हिंदी में गलत आ रहा है। क्या करें?",
+    faq_3_a: "कभी-कभी अनुवाद सही नहीं होता है। सबसे अच्छा उपाय यह है कि आप अपनी प्रोफाइल एडिट करें और अपना नाम सीधे हिंदी में लिखें। या आप पोस्टर बनाते समय अपना नाम हिंदी में टाइप कर सकते हैं।",
+    
+    faq_4_q: "क्या यह ऐप उपयोग करने के लिए मुफ़्त है?",
+    faq_4_a: "हाँ! सेवादार ऐप सभी उपयोगकर्ताओं के लिए पोस्टर बनाने, पोल में भाग लेने और समुदाय से जुड़ने के लिए पूरी तरह से मुफ़्त है।",
+    
+    faq_5_q: "मैं अपनी प्रोफाइल फोटो कैसे बदलूं?",
+    faq_5_a: "अपने प्रोफाइल पेज पर, अपनी तस्वीर पर कैमरा आइकन टैप करें और नई फोटो अपलोड करें। आप इसे सही तरह से क्रॉप भी कर सकते हैं।",
+    
+    faq_6_q: "लीडरबोर्ड क्या है?",
+    faq_6_a: "लीडरबोर्ड प्रतापगढ़ के शीर्ष योगदानकर्ताओं को दिखाता है। अपनी रैंक बढ़ाने और शीर्ष सूची में आने के लिए अधिक अंक अर्जित करें।",
+    
+    faq_7_q: "मैं अपना पासवर्ड भूल गया हूँ। रिसेट कैसे करें?",
+    faq_7_a: "लॉगिन स्क्रीन पर 'पासवर्ड भूल गए?' पर क्लिक करें। रिसेट करने के लिए आपको अपना फोन नंबर और अपने सुरक्षा प्रश्न (माता जी के गाँव का नाम) का उत्तर देना होगा।"
   }
 };
