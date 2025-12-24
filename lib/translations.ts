@@ -38,7 +38,48 @@ export const translations = {
     start_sevadar: "Start Sevadar",
     next: "Next",
     bonus_points: "Bonus Points",
-    tap_to_upload: "Tap to Upload"
+    tap_to_upload: "Tap to Upload",
+    
+    // --- GALLERY KEYS ---
+    gallery_title: "Design Gallery",
+    search_placeholder: "Search festivals...",
+    tab_upcoming: "Upcoming",
+    tab_all: "All",
+    tab_past: "Past",
+    no_results: "No posters found matching your search.",
+    load_more: "Load More",
+    create_card: "Create Card",
+
+    // --- HOME PAGE KEYS ---
+    todays_special: "Today's Special",
+    no_festival_today: "No Special Festival Today",
+    check_upcoming_list: "Check upcoming list",
+    thoughts_resolutions: "Thoughts & Resolutions",
+    scroll_more: "Scroll",
+    upcoming_festivals: "Upcoming Festivals",
+    more: "More",
+    message_to_public: "Message to Public 🙏🏻",
+    apna_pratapgarh: "Apna Pratapgarh",
+    glimpses: "Glimpses of Pratapgarh",
+    explore: "Explore",
+    location: "Location",
+    directions: "Get Directions",
+    
+    // Apna Pratapgarh Grid
+    villages: "Villages",
+    police_stations: "Police Stations",
+    municipality: "Municipality",
+    blocks: "Blocks",
+    polling_stations: "Polling Stations",
+
+    // Exit Popup
+    exit_app: "Exit App?",
+    exit_confirm: "Are you sure you want to close the app?",
+    exit_yes: "Yes, Exit",
+    exit_no: "No, Stay",
+    
+    // Static Footer
+    powered_by: "Powered by UT Arts"
   },
   hi: {
     home: "होम",
@@ -79,6 +120,47 @@ export const translations = {
     start_sevadar: "शुरू करें",
     next: "आगे बढ़ें",
     bonus_points: "बोनस अंक",
-    tap_to_upload: "फोटो चुनें"
+    tap_to_upload: "फोटो चुनें",
+
+    // --- GALLERY KEYS ---
+    gallery_title: "डिजाइन गैलरी",
+    search_placeholder: "त्योहार खोजें (Search)...",
+    tab_upcoming: "आगामी",
+    tab_all: "सभी",
+    tab_past: "बीते हुए",
+    no_results: "आपकी खोज से मेल खाने वाला कोई पोस्टर नहीं मिला।",
+    load_more: "और देखें",
+    create_card: "कार्ड बनाएं",
+
+    // --- HOME PAGE KEYS ---
+    todays_special: "आज का विशेष",
+    no_festival_today: "आज कोई विशेष त्योहार नहीं है",
+    check_upcoming_list: "आने वाले त्योहारों की सूची देखें",
+    thoughts_resolutions: "विचार और संकल्प",
+    scroll_more: "स्क्रॉल करें",
+    upcoming_festivals: "आगामी त्योहार",
+    more: "अधिक",
+    message_to_public: "जनता को संदेश 🙏🏻",
+    apna_pratapgarh: "अपना प्रतापगढ़",
+    glimpses: "प्रतापगढ़ की झलकियाँ",
+    explore: "देखें",
+    location: "स्थान",
+    directions: "दिशा देखें",
+    
+    // Apna Pratapgarh Grid
+    villages: "गाँव",
+    police_stations: "पुलिस स्टेशन",
+    municipality: "नगर पालिका",
+    blocks: "ब्लॉक",
+    polling_stations: "मतदान केंद्र",
+
+    // Exit Popup
+    exit_app: "ऐप बंद करें?",
+    exit_confirm: "क्या आप ऐप से बाहर निकलना चाहते हैं?",
+    exit_yes: "हाँ, बंद करें",
+    exit_no: "नहीं, रुकें",
+
+    // Static Footer
+    powered_by: "पावर्ड बाय UT Arts"
   }
 };

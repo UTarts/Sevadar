@@ -6,7 +6,7 @@ import { Trophy, ChevronRight, User } from 'lucide-react';
 import { useProfile } from './ProfileContext';
 
 export default function HomeLeaderboard() {
-  const { profile } = useProfile(); 
+  const { profile, t } = useProfile(); 
   const [leaders, setLeaders] = useState<any[]>([]);
 
   useEffect(() => {
@@ -45,10 +45,10 @@ export default function HomeLeaderboard() {
     <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
        <div className="flex justify-between items-center mb-4">
            <h3 className="font-bold text-gray-800 font-hindi flex items-center gap-2">
-               <Trophy size={18} className="text-yellow-500 fill-yellow-500" /> टॉप सेवादार
+               <Trophy size={18} className="text-yellow-500 fill-yellow-500" /> {t.top_sevadar}
            </h3>
            <Link href="/leaderboard" onClick={handleLink} className="text-xs font-bold text-primary flex items-center">
-               View All <ChevronRight size={14} />
+               {t.view_all} <ChevronRight size={14} />
            </Link>
        </div>
 

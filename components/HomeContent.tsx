@@ -1,12 +1,33 @@
 'use client';
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image"; 
+import dynamic from "next/dynamic";
 import { ChevronRight, Download, MapPin } from "lucide-react";
 import Header from "@/components/Header";
-import PollWidget from '@/components/PollWidget';
-import HomeLeaderboard from '@/components/HomeLeaderboard';
 import { useProfile } from '@/components/ProfileContext';
-import QuizWidget from '@/components/QuizWidget';
-import SuggestionBox from '@/components/SuggestionBox';
+
+// --- LAZY LOADED COMPONENTS WITH SKELETONS ---
+const Skeleton = ({ className }: { className: string }) => (
+  <div className={`bg-gray-200 animate-pulse ${className}`} />
+);
+
+const PollWidget = dynamic(() => import('@/components/PollWidget'), {
+  loading: () => <Skeleton className="h-64 w-full rounded-3xl" />,
+  ssr: false, 
+});
+
+const HomeLeaderboard = dynamic(() => import('@/components/HomeLeaderboard'), {
+  loading: () => <Skeleton className="h-80 w-full rounded-3xl" />,
+});
+
+const QuizWidget = dynamic(() => import('@/components/QuizWidget'), {
+  loading: () => <Skeleton className="h-48 w-full rounded-3xl" />,
+});
+
+const SuggestionBox = dynamic(() => import('@/components/SuggestionBox'), {
+  loading: () => <Skeleton className="h-40 w-full rounded-3xl" />,
+});
 
 // Helper component for bottom grid
 function InfoCard({ title, count, color, icon, link }: any) {
@@ -21,10 +42,63 @@ function InfoCard({ title, count, color, icon, link }: any) {
     );
 }
 
-export default function HomeContent({ todaysPosters, upcomingPosters, generalPosters }: any) {
-  const { profile } = useProfile();
+// --- EXIT MODAL COMPONENT ---
+function ExitModal({ onConfirm, onCancel, t }: any) {
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl p-6 w-[85%] max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+                <div className="text-center">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2 font-hindi">{t.exit_app}</h3>
+                    <p className="text-sm text-gray-500 mb-6 font-hindi">{t.exit_confirm}</p>
+                    <div className="flex gap-3 w-full">
+                        <button onClick={onCancel} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl text-sm active:scale-95 transition-transform">
+                            {t.exit_no}
+                        </button>
+                        <button onClick={onConfirm} className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl text-sm shadow-lg active:scale-95 transition-transform">
+                            {t.exit_yes}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
 
-  // Login Guard Function
+export default function HomeContent({ todaysPosters, upcomingPosters, generalPosters }: any) {
+  const { profile, t } = useProfile();
+  const [showExitModal, setShowExitModal] = useState(false);
+
+  // --- EXIT APP LOGIC ---
+  useEffect(() => {
+    // 1. Push dummy state to trap back button
+    window.history.pushState(null, "", window.location.href);
+
+    const handlePopState = (event: PopStateEvent) => {
+        // 2. Prevent default back
+        event.preventDefault();
+        setShowExitModal(true);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+        window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  const handleExitConfirm = () => {
+     try {
+         window.close();
+     } catch(e) {}
+     window.history.back(); 
+     window.history.back();
+  };
+
+  const handleExitCancel = () => {
+      setShowExitModal(false);
+      window.history.pushState(null, "", window.location.href);
+  };
+
   const handleProtectedClick = (e: React.MouseEvent, url: string) => {
      if (!profile.name) {
          e.preventDefault();
@@ -35,25 +109,34 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
   return (
     <main className="min-h-screen bg-neutral-100 pt-24 pb-28 font-sans text-gray-800">
       <Header />
+      
+      {showExitModal && <ExitModal onConfirm={handleExitConfirm} onCancel={handleExitCancel} t={t} />}
 
       <div className="p-4 space-y-10">
         
-        {/* --- 1. HERO SECTION (Today's Posters) --- */}
+        {/* --- 1. HERO SECTION --- */}
         {todaysPosters.length > 0 ? (
           <section>
             <div className="flex items-center gap-2 mb-3">
               <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded animate-pulse">LIVE</span>
-              <h2 className="text-xl font-bold text-gray-800 font-hindi">आज का विशेष</h2>
+              <h2 className="text-xl font-bold text-gray-800 font-hindi">{t.todays_special}</h2>
             </div>
             <div className="flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar">
-              {todaysPosters.map((poster: any) => (
-                <div key={poster.id} className="min-w-[85%] sm:min-w-[350px] snap-center bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 relative group">
-                  <img src={poster.image} alt={poster.title} className="w-full aspect-[9/16] object-cover" onError={(e) => (e.currentTarget.src = '/placeholder.jpg')} />
+              {todaysPosters.map((poster: any, index: number) => (
+                <div key={poster.id} className="min-w-[85%] sm:min-w-[350px] snap-center bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 relative group aspect-[9/16]">
+                  <Image 
+                    src={poster.image} 
+                    alt={poster.title} 
+                    fill 
+                    className="object-cover" 
+                    sizes="(max-width: 640px) 85vw, 350px"
+                    priority={index === 0}
+                  />
                   <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-5 text-white pt-20">
                     <h3 className="text-2xl font-bold font-hindi leading-tight">{poster.title}</h3>
                     <p className="text-sm opacity-90 mb-3">{poster.date}</p>
-                    <Link href={`/create/${poster.id}`} onClick={(e) => handleProtectedClick(e, '')} className="w-full bg-gradient-to-r from-primary to-primary-dark py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
-                      <Download size={18} /> कार्ड बनाएं
+                    <Link href={`/create/${poster.id}`} onClick={(e) => handleProtectedClick(e, '')} className="w-full bg-gradient-to-r from-primary to-primary-dark py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 relative z-10">
+                      <Download size={18} /> {t.create_card}
                     </Link>
                   </div>
                 </div>
@@ -73,15 +156,15 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
                   </p>
                 </div>
                 <h3 className="text-xl font-bold font-hindi leading-snug drop-shadow-md">
-                  आज कोई विशेष त्योहार नहीं है
+                  {t.no_festival_today}
                 </h3>
                 <p className="text-blue-100 text-sm font-medium mt-0.5">
-                  आने वाले त्योहारों की सूची देखें
+                  {t.check_upcoming_list}
                 </p>
               </div>
               <div className="flex justify-end mt-1">
                 <Link href="/all-posters" onClick={(e) => handleProtectedClick(e, '/all-posters')} className="group inline-flex items-center gap-1.5 px-5 py-2.5 bg-white text-blue-600 rounded-full text-sm font-bold shadow-sm hover:bg-blue-50 transition-colors">
-                    सभी देखें 
+                    {t.view_all} 
                     <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
               </div>
@@ -92,14 +175,20 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
         {/* --- 2. GENERAL POSTERS --- */}
         <section>
           <div className="flex justify-between items-end mb-3">
-            <h2 className="text-xl font-bold text-gray-800 font-hindi">विचार और संकल्प</h2>
-            <span className="text-xs text-primary font-bold">Scroll →</span>
+            <h2 className="text-xl font-bold text-gray-800 font-hindi">{t.thoughts_resolutions}</h2>
+            <span className="text-xs text-primary font-bold">{t.scroll_more} →</span>
           </div>
           <div className="flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 snap-x hide-scrollbar">
             {generalPosters.map((poster: any) => (
-              <Link key={poster.id} href={`/create/${poster.id}`} onClick={(e) => handleProtectedClick(e, '')} className="min-w-[140px] snap-start block">
-                <div className="rounded-xl overflow-hidden shadow-md border border-gray-100 relative aspect-[9/16] active:scale-95 transition-transform">
-                  <img src={poster.image} alt="General" className="w-full h-full object-cover" />
+              <Link key={poster.id} href={`/create/${poster.id}`} onClick={(e) => handleProtectedClick(e, '')} className="min-w-[140px] snap-start block relative aspect-[9/16]">
+                <div className="w-full h-full rounded-xl overflow-hidden shadow-md border border-gray-100 relative active:scale-95 transition-transform">
+                  <Image 
+                    src={poster.image} 
+                    alt="General" 
+                    fill 
+                    className="object-cover"
+                    sizes="140px"
+                  />
                   <div className="absolute inset-0 bg-black/10"></div>
                   <div className="absolute bottom-2 right-2 bg-white/90 p-1.5 rounded-full shadow-sm">
                     <ChevronRight size={16} className="text-primary" />
@@ -113,18 +202,20 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
         {/* --- 3. UPCOMING FESTIVALS --- */}
         <section>
           <div className="flex justify-between items-center mb-5 px-1">
-              <h2 className="text-xl font-bold text-gray-800 font-hindi">आगामी त्योहार</h2>
-              <Link href="/all-posters" onClick={(e) => handleProtectedClick(e, '')} className="text-primary text-sm font-bold">More</Link>
+              <h2 className="text-xl font-bold text-gray-800 font-hindi">{t.upcoming_festivals}</h2>
+              <Link href="/all-posters" onClick={(e) => handleProtectedClick(e, '')} className="text-primary text-sm font-bold">{t.more}</Link>
           </div>
 
           <div className="space-y-4">
             {upcomingPosters.length > 0 && (
               <Link href={`/create/${upcomingPosters[0].id}`} onClick={(e) => handleProtectedClick(e, '')} className="block group relative h-56 rounded-[2.5rem] overflow-hidden shadow-xl shadow-orange-100 border border-gray-100">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-10"></div>
-                <img 
+                <Image 
                     src={upcomingPosters[0].image} 
-                    className="absolute inset-0 w-full h-full object-cover object-[center_17%] transition-transform duration-700 group-hover:scale-105" 
-                    alt={upcomingPosters[0].title} 
+                    alt={upcomingPosters[0].title}
+                    fill
+                    className="object-cover object-[center_17%] transition-transform duration-700 group-hover:scale-105" 
+                    sizes="(max-width: 768px) 100vw, 500px"
                 />
                 <div className="absolute top-4 right-4 z-20 bg-white/20 backdrop-blur-md border border-white/20 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">
                   Upcoming
@@ -144,7 +235,15 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
             <div className="flex flex-col gap-3">
               {upcomingPosters.slice(1).map((poster: any) => (
                 <Link key={poster.id} href={`/create/${poster.id}`} onClick={(e) => handleProtectedClick(e, '')} className="flex items-center gap-4 bg-slate-50 p-2.5 pr-5 rounded-full border border-gray-200 shadow-md hover:shadow-lg hover:bg-white transition-all active:scale-[0.98]">
-                  <img src={poster.image} className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm" alt={poster.title} />
+                  <div className="relative w-14 h-14 shrink-0">
+                    <Image 
+                      src={poster.image} 
+                      alt={poster.title}
+                      fill
+                      className="rounded-full object-cover border-2 border-white shadow-sm"
+                      sizes="56px"
+                    />
+                  </div>
                   <div className="flex-1 pl-1">
                     <h4 className="font-bold text-gray-800 font-hindi text-lg leading-none mb-1">{poster.title}</h4>
                     <p className="text-xs text-primary font-semibold tracking-wide">{poster.date}</p>
@@ -158,9 +257,11 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
           </div>
         </section>
 
+        {/* --- LAZY LOADED WIDGETS --- */}
         <section className="px-4 mb-6">
             <QuizWidget />
         </section>
+        
         <PollWidget />
 
         {/* --- 4. MESSAGE SECTION --- */}
@@ -170,7 +271,7 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
 
           <div className="relative z-10">
             <span className="inline-block px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold tracking-wide mb-4 border border-white/10">
-              जनता को संदेश 🙏🏻
+              {t.message_to_public}
             </span>
             <p className="text-xl md:text-2xl font-hindi leading-relaxed font-medium drop-shadow-md mb-6">
               "प्रतापगढ़ का विकास और आपकी सेवा ही मेरा एकमात्र संकल्प है। आइए मिलकर एक नए, सशक्त और विकसित प्रतापगढ़ का निर्माण करें।"
@@ -180,7 +281,13 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
                 <p className="text-base font-bold font-hindi">बृजेश कुमार तिवारी</p>
                 <p className="text-xs text-purple-100 font-medium">सेवादार, प्रतापगढ़</p>
               </div>
-              <img src="/posters/BT.webp" className="h-12 w-12 rounded-full object-cover border-2 border-white/30" alt="Brijesh Tiwari" />
+              <Image 
+                src="/posters/BT.webp" 
+                alt="Brijesh Tiwari"
+                width={48}
+                height={48}
+                className="rounded-full object-cover border-2 border-white/30"
+              />
             </div>
           </div>
         </section>
@@ -194,25 +301,31 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
         <div className="w-full lg:w-1/2">
           <div className="relative bg-slate-50 rounded-[2.5rem] p-6 mb-6 shadow-lg border border-white/50">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800 font-hindi">अपना प्रतापगढ़</h2>
+              <h2 className="text-2xl font-bold text-gray-800 font-hindi">{t.apna_pratapgarh}</h2>
               <div className="h-1 w-12 bg-primary rounded-full mx-auto mt-2 opacity-60"></div>
             </div>
             <div className="relative rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-4 border-white bg-white overflow-hidden transform transition hover:scale-[1.02]">
-              <img src="/posters/pratapgarh mapnew.webp" alt="Pratapgarh Map" className="w-full h-auto" loading="lazy" />
+              <Image 
+                src="/posters/pratapgarh mapnew.webp" 
+                alt="Pratapgarh Map" 
+                width={600} 
+                height={400}
+                className="w-full h-auto"
+              />
               <div className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center text-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
               </div>
             </div>
           </div>
             <div className="w-full lg:w-1/2 grid grid-cols-2 gap-3">
-              <InfoCard title="गांव" count="2266" color="bg-orange-500" icon="🏘️" link="https://pratapgarh.nic.in/village/" />
-              <InfoCard title="पुलिस स्टेशन" count="22" color="bg-gray-700" icon="🚔" link="https://pratapgarh.nic.in/police-station/" />
-              <InfoCard title="नगर पालिका" count="19" color="bg-green-600" icon="🏛️" link="https://pratapgarh.nic.in/public-utility-category/municipality/" />
-              <InfoCard title="ब्लॉक" count="17" color="bg-blue-600" icon="🏢" link="https://pratapgarh.nic.in/subdivision-blocks/" />
+              <InfoCard title={t.villages} count="2266" color="bg-orange-500" icon="🏘️" link="https://pratapgarh.nic.in/village/" />
+              <InfoCard title={t.police_stations} count="22" color="bg-gray-700" icon="🚔" link="https://pratapgarh.nic.in/police-station/" />
+              <InfoCard title={t.municipality} count="19" color="bg-green-600" icon="🏛️" link="https://pratapgarh.nic.in/public-utility-category/municipality/" />
+              <InfoCard title={t.blocks} count="17" color="bg-blue-600" icon="🏢" link="https://pratapgarh.nic.in/subdivision-blocks/" />
               <Link href="https://pratapgarh.nic.in/final-published-polling-station-2025/" target="_blank" className="col-span-2 bg-purple-600 text-white p-4 rounded-2xl shadow-lg relative overflow-hidden group hover:scale-[1.02] transition-transform flex items-center justify-between px-8">
                   <div className="relative z-10">
                     <div className="text-4xl font-bold">2626</div>
-                    <div className="text-lg opacity-90 font-hindi">मतदान केंद्र</div>
+                    <div className="text-lg opacity-90 font-hindi">{t.polling_stations}</div>
                   </div>
                   <div className="text-6xl opacity-30 group-hover:scale-110 transition-transform">🗳️</div>
               </Link>
@@ -223,13 +336,19 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
         {/* --- 6. HIGHLIGHTS & MAP --- */}
         <section>
           <div className="flex items-center justify-between mb-4 px-2">
-            <h3 className="text-xl font-bold text-gray-800 font-hindi">प्रतापगढ़ की झलकियाँ</h3>
-            <span className="text-xs font-bold text-primary cursor-pointer">Explore →</span>
+            <h3 className="text-xl font-bold text-gray-800 font-hindi">{t.glimpses}</h3>
+            <span className="text-xs font-bold text-primary cursor-pointer">{t.explore} →</span>
           </div>
           <div className="flex overflow-x-auto gap-4 pb-6 snap-x snap-mandatory hide-scrollbar -mx-4 px-4">
             
             <div className="group relative min-w-[85vw] sm:min-w-[320px] h-[400px] rounded-[32px] overflow-hidden snap-center shadow-xl shadow-gray-200/50">
-              <img src="/posters/belha devi.webp" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Belha Devi" />
+              <Image 
+                src="/posters/belha devi.webp" 
+                alt="Belha Devi" 
+                fill
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                sizes="(max-width: 640px) 85vw, 320px"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-orange-900/90 via-black/20 to-transparent"></div>
               <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md p-2 rounded-full border border-white/20 text-xl">🛕</div>
               <div className="absolute bottom-0 left-0 p-6 text-white">
@@ -239,7 +358,13 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
             </div>
 
             <div className="group relative min-w-[85vw] sm:min-w-[320px] h-[400px] rounded-[32px] overflow-hidden snap-center shadow-xl shadow-gray-200/50">
-              <img src="/posters/mangarhdham.webp" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Mangarh Dham" />
+              <Image 
+                src="/posters/mangarhdham.webp" 
+                alt="Mangarh Dham"
+                fill
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                sizes="(max-width: 640px) 85vw, 320px"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-purple-900/90 via-black/20 to-transparent"></div>
               <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md p-2 rounded-full border border-white/20 text-xl">🕉️</div>
               <div className="absolute bottom-0 left-0 p-6 text-white">
@@ -249,7 +374,13 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
             </div>
             
             <div className="group relative min-w-[85vw] sm:min-w-[320px] h-[400px] rounded-[32px] overflow-hidden snap-center shadow-xl shadow-gray-200/50">
-              <img src="/posters/guisernath.webp" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Ghuisarnath" />
+              <Image 
+                src="/posters/guisernath.webp" 
+                alt="Ghuisarnath"
+                fill
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                sizes="(max-width: 640px) 85vw, 320px"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-green-900/90 via-black/20 to-transparent"></div>
               <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md p-2 rounded-full border border-white/20 text-xl">🔱</div>
               <div className="absolute bottom-0 left-0 p-6 text-white">
@@ -259,7 +390,13 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
             </div>
 
             <div className="group relative min-w-[85vw] sm:min-w-[320px] h-[400px] rounded-[32px] overflow-hidden snap-center shadow-xl shadow-gray-200/50">
-              <img src="/posters/ghantaghar.webp" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Ghantaghar" />
+              <Image 
+                src="/posters/ghantaghar.webp" 
+                alt="Ghantaghar"
+                fill
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                sizes="(max-width: 640px) 85vw, 320px"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-red-900/90 via-black/20 to-transparent"></div>
               <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md p-2 rounded-full border border-white/20 text-xl">🕐</div>
               <div className="absolute bottom-0 left-0 p-6 text-white">
@@ -271,7 +408,7 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
           </div>
         </section>
 
-        {/* --- SUGGESTION BOX --- */}
+        {/* --- SUGGESTION BOX (LAZY LOADED) --- */}
         <section className="mt-8">
             <SuggestionBox />
         </section>
@@ -287,12 +424,12 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
           <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-sm border border-white/50 z-10">
             <h3 className="text-sm font-bold text-gray-800 font-hindi flex items-center gap-1.5">
               <MapPin size={16} className="text-red-500 fill-red-500" />
-              Location
+              {t.location}
             </h3>
             <p className="text-[10px] text-gray-500 font-bold ml-5">प्रतापगढ़, उत्तर प्रदेश</p>
           </div>
           <a href="https://maps.app.goo.gl/JKg7NJxv5wNB3hsQ6" target="_blank" className="absolute bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg shadow-blue-600/30 flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform z-10">
-            दिशा देखें 
+            {t.directions} 
           </a>
         </section>
 
@@ -300,7 +437,14 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
         <div className="pt-8 pb-0 border-t border-gray-200 mt-10">
            <div style={{fontFamily: 'Arial, sans-serif', textAlign: 'center'}}>
              <a href="https://www.utarts.in" target="_blank" rel="noopener noreferrer" style={{display: 'block', textDecoration: 'none', color: '#888', fontSize: '12px'}}>
-                <img src="https://utarts.in/images/poweredbyutarts.webp" alt="Powered by UT Arts" style={{display: 'block', marginLeft: 'auto', marginRight: 'auto', height: '50px', width: 'auto', border: 0, marginBottom: 0, opacity: 0.8}} />
+                <Image 
+                  src="https://utarts.in/images/poweredbyutarts.webp" 
+                  alt="Powered by UT Arts" 
+                  width={150}
+                  height={50}
+                  style={{display: 'block', marginLeft: 'auto', marginRight: 'auto', height: '50px', width: 'auto', border: 0, marginBottom: 0, opacity: 0.8}} 
+                  unoptimized
+                />
                 <br/>visit www.utarts.in
              </a>
            </div>

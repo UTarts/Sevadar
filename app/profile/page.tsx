@@ -4,12 +4,35 @@ import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { useProfile } from '@/components/ProfileContext';
 import { LogOut, User, MapPin, Award, Shield, Camera, Edit2, Check, X, Loader2, Lock, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '@/lib/cropImage';
 
+// --- PROFILE SKELETON ---
+const ProfileSkeleton = () => (
+  <div className="min-h-screen bg-neutral-100 pt-safe pb-24 font-sans animate-pulse">
+    {/* Header Skeleton */}
+    <div className="bg-white p-6 pb-16 rounded-b-[2.5rem] shadow-sm relative overflow-hidden flex flex-col items-center">
+        <div className="w-28 h-28 bg-gray-200 rounded-full border-4 border-white shadow-lg mb-4"></div>
+        <div className="h-6 bg-gray-200 rounded w-40 mb-2"></div>
+        <div className="h-4 bg-gray-200 rounded w-24"></div>
+    </div>
+    {/* Stats Skeleton */}
+    <div className="px-4 -mt-10 relative z-20 mb-6">
+        <div className="bg-white h-24 rounded-2xl shadow-lg border border-gray-100"></div>
+    </div>
+    {/* List Skeleton */}
+    <div className="px-4 space-y-3">
+        <div className="h-16 bg-white rounded-2xl"></div>
+        <div className="h-16 bg-white rounded-2xl"></div>
+        <div className="h-16 bg-white rounded-2xl"></div>
+    </div>
+  </div>
+);
+
 export default function ProfilePage() {
     const router = useRouter();
-    const { updateProfile, t, language, setLanguage, profile } = useProfile(); // Get 'profile'
+    const { updateProfile, t, language, setLanguage, profile } = useProfile(); 
   
   // Data States
   const [loading, setLoading] = useState(true);
@@ -31,15 +54,14 @@ export default function ProfilePage() {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
   useEffect(() => { 
-    // 1. ADMIN CHECK: Redirect to dashboard if Admin
     if (profile?.is_admin) {
         router.replace('/admin');
         return;
     }
-    
     fetchProfile(); 
   }, [profile]); 
 
+  // Initial Fetch on Mount
   useEffect(() => { fetchProfile(); }, []);
 
   const fetchProfile = async () => {
@@ -77,7 +99,7 @@ export default function ProfilePage() {
       setSaving(false);
   };
 
-  // --- UPLOAD LOGIC (CLOUDINARY) ---
+  // --- UPLOAD LOGIC ---
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const reader = new FileReader();
@@ -86,23 +108,20 @@ export default function ProfilePage() {
     }
   };
 
-  // --- SMART COMPRESSED UPLOAD ---
   const handleCropSave = async () => {
     if (!tempPhoto || !croppedAreaPixels) return;
-    setSaving(true); // Show loader
+    setSaving(true); 
 
     try {
-        // 1. Get Cropped Blob
         const croppedImgUrl = await getCroppedImg(tempPhoto, croppedAreaPixels);
         const res = await fetch(croppedImgUrl);
         const blob = await res.blob();
 
-        // 2. Client-Side Compression (Max 500px)
         const compressedBlob = await new Promise<Blob>((resolve) => {
-            const img = new Image();
+            const img = new window.Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const maxSize = 500; // Limit width/height
+                const maxSize = 500; 
                 let width = img.width;
                 let height = img.height;
                 if (width > height) {
@@ -114,13 +133,11 @@ export default function ProfilePage() {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx?.drawImage(img, 0, 0, width, height);
-                // Output JPEG at 80% quality
                 canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.8);
             };
             img.src = URL.createObjectURL(blob);
         });
 
-        // 3. Upload to Cloudinary
         const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
         const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET;
         
@@ -137,10 +154,7 @@ export default function ProfilePage() {
         const json = await cloudRes.json();
 
         if (json.secure_url) {
-            // 4. Update Database
             await supabase.from('profiles').update({ avatar_url: json.secure_url }).eq('id', user.id);
-            
-            // 5. Update UI
             setDbProfile({ ...dbProfile, avatar_url: json.secure_url });
             updateProfile({ name: dbProfile.full_name, photo: json.secure_url });
             setIsCropping(false);
@@ -170,7 +184,7 @@ export default function ProfilePage() {
     window.location.reload();
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
+  if (loading) return <ProfileSkeleton />;
 
   return (
     <div className="min-h-screen bg-neutral-100 pt-safe pb-24 font-sans">
@@ -178,10 +192,19 @@ export default function ProfilePage() {
       <div className="bg-white p-6 pb-16 rounded-b-[2.5rem] shadow-sm relative overflow-hidden">
         <div className="relative z-10 flex flex-col items-center">
             <div className="relative group mb-3">
-                <div className="w-28 h-28 bg-gray-200 rounded-full border-4 border-white shadow-lg overflow-hidden">
-                    {dbProfile?.avatar_url ? <img src={dbProfile.avatar_url} className="w-full h-full object-cover" /> : <User size={48} className="text-gray-400 m-auto mt-8" />}
+                <div className="w-28 h-28 bg-gray-200 rounded-full border-4 border-white shadow-lg overflow-hidden relative">
+                    {dbProfile?.avatar_url ? (
+                        <Image 
+                           src={dbProfile.avatar_url} 
+                           alt="Profile" 
+                           fill 
+                           className="object-cover"
+                        />
+                    ) : (
+                        <User size={48} className="text-gray-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    )}
                 </div>
-                <label className="absolute bottom-1 right-1 bg-primary text-white p-2 rounded-full cursor-pointer shadow-md active:scale-95 transition-transform">
+                <label className="absolute bottom-1 right-1 bg-primary text-white p-2 rounded-full cursor-pointer shadow-md active:scale-95 transition-transform z-10">
                     <Camera size={16} /><input type="file" className="hidden" accept="image/*" onChange={onFileChange} />
                 </label>
             </div>

@@ -1,173 +1,243 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import Header from '@/components/Header';
-import { Search, Calendar, ChevronRight, ChevronDown } from 'lucide-react';
+import Image from 'next/image';
+import { Search, Calendar, ChevronRight, ChevronDown, ArrowLeft, Filter } from 'lucide-react';
+import { useProfile } from '@/components/ProfileContext';
+
+// --- SKELETON COMPONENT (For Loading State) ---
+const PosterSkeleton = () => (
+  <div className="flex flex-col gap-2 animate-pulse">
+    <div className="relative aspect-[9/16] bg-gray-200 rounded-2xl overflow-hidden border border-gray-100"></div>
+    <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+  </div>
+);
 
 export default function AllPostersPage() {
+  const { t, language } = useProfile(); // Use global language context
   const [posters, setPosters] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true); // Loading state
   const [filter, setFilter] = useState('');
   const [category, setCategory] = useState<'upcoming' | 'all' | 'past'>('upcoming');
-  
-  // PERFORMANCE: Only show this many initially
   const [visibleCount, setVisibleCount] = useState(12);
 
+  // 1. Fetch Data
   useEffect(() => {
     fetch('/data/posters.json')
       .then(res => res.json())
-      .then(data => setPosters(data))
+      .then(data => {
+          setPosters(data);
+          setLoading(false);
+      })
       .catch(err => console.error("Error:", err));
   }, []);
 
+  // 2. Date Logic
   const parseDate = (dateStr: string) => {
     if (!dateStr) return new Date(0);
     const [day, month, year] = dateStr.split('-').map(Number);
     return new Date(year, month - 1, day);
   };
 
-  // --- ENGLISH TO HINDI DICTIONARY ---
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // 3. Dictionary for Dynamic Content (Poster Titles)
   const englishToHindiMap: Record<string, string> = {
     "diwali": "दीपावली",
     "deepawali": "दीपावली",
     "holi": "होली",
     "new year": "नववर्ष",
-    "republic": "गणतंत्र",
-    "independence": "स्वतंत्रता",
+    "republic day": "गणतंत्र दिवस",
+    "independence day": "स्वतंत्रता दिवस",
+    "makar sankranti": "मकर संक्रांति",
     "christmas": "क्रिसमस",
     "eid": "ईद",
-    "raksha": "रक्षाबंधन",
-    "basant": "बसंत",
-    "shivratri": "शिवरात्रि",
-    "youth": "युवा",
-    "army": "सेना",
+    "raksha bandhan": "रक्षा बंधन",
+    "dussehra": "दशहरा",
     "navratri": "नवरात्रि",
-    "dussehra": "दशहरा"
+    "janmashtami": "जन्माष्टमी",
+    "ganesh chaturthi": "गणेश चतुर्थी"
   };
 
-  const filteredPosters = posters
-    .filter(p => {
-        // 1. Hide General Posters from Gallery
-        if (p.type === 'general') return false;
+  const translateTitle = (title: string) => {
+    if (language === 'en') return title;
+    const lowerTitle = title.toLowerCase();
+    for (const key in englishToHindiMap) {
+      if (lowerTitle.includes(key)) {
+        return title.replace(new RegExp(key, 'gi'), englishToHindiMap[key]);
+      }
+    }
+    return title; // Fallback to original
+  };
 
-        // 2. Advanced Search Logic
-        const searchLower = filter.toLowerCase();
-        
-        // Check if english input matches a hindi festival key
-        let hindiTerm = "";
-        Object.keys(englishToHindiMap).forEach(key => {
-            if (searchLower.includes(key)) hindiTerm = englishToHindiMap[key];
-        });
+  // 4. Filtering & Sorting Logic
+  const filteredPosters = useMemo(() => {
+    let result = posters;
 
-        const matchesSearch = p.title.toLowerCase().includes(searchLower) || 
-                              (p.date && p.date.includes(filter)) ||
-                              (hindiTerm && p.title.includes(hindiTerm)); // Search by Hindi translation
+    // A. Filter by Search
+    if (filter) {
+      const lowerFilter = filter.toLowerCase();
+      result = result.filter(p => 
+        p.title.toLowerCase().includes(lowerFilter) || 
+        (p.date && p.date.includes(lowerFilter))
+      );
+    }
 
-        if (!matchesSearch) return false;
+    // B. Filter by Category
+    if (category === 'upcoming') {
+      result = result.filter(p => {
+        if (!p.date) return false;
+        return parseDate(p.date) >= today;
+      }).sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime());
+    } else if (category === 'past') {
+      result = result.filter(p => {
+        if (!p.date) return false;
+        return parseDate(p.date) < today;
+      }).sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime()); // Most recent past first
+    } else {
+       // All: Sort by Priority first, then Date
+       result = [...result].sort((a, b) => {
+           // Put "dated" posters before "general"
+           if (a.type === 'dated' && b.type === 'general') return -1;
+           if (a.type === 'general' && b.type === 'dated') return 1;
+           return 0;
+       });
+    }
 
-        // 3. Category Filter
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        const pDate = p.date ? parseDate(p.date) : null;
+    return result;
+  }, [posters, filter, category, language]);
 
-        if (category === 'upcoming') return pDate && pDate >= today;
-        if (category === 'past') return pDate && pDate < today;
-        
-        return true; 
-    })
-    .sort((a, b) => {
-        // Sort by Date
-        const dateA = parseDate(a.date).getTime();
-        const dateB = parseDate(b.date).getTime();
-        return dateA - dateB; 
-    });
-
-  // PERFORMANCE: Slice the data based on visibleCount
   const visiblePosters = filteredPosters.slice(0, visibleCount);
 
-  const loadMore = () => {
-    setVisibleCount(prev => prev + 12);
-  };
-
   return (
-    <div className="min-h-screen bg-neutral-100 pt-24 pb-28 font-sans">
-      <Header />
+    <main className="min-h-screen bg-gray-50 pb-24 font-sans">
       
-      <div className="px-4 mt-2 mb-6 space-y-4">
-        {/* Search Bar */}
-        <div className="relative shadow-md rounded-2xl bg-white border border-gray-200">
-            <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
-            <input 
-                type="text" 
-                placeholder="खोजें (Search)..." 
-                className="w-full pl-12 pr-4 py-3 rounded-2xl border-none bg-transparent focus:ring-2 ring-primary focus:outline-none font-hindi text-gray-800"
-                value={filter}
-                onChange={(e) => {
-                    setFilter(e.target.value);
-                    setVisibleCount(12); // Reset pagination on search
-                }}
-            />
-        </div>
+      {/* --- FIXED HEADER SECTION --- */}
+      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm transition-all">
+         
+         {/* Top Bar */}
+         <div className="flex items-center gap-3 p-4 pt-safe pb-2">
+            <Link href="/" className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition active:scale-95">
+               <ArrowLeft size={24} className="text-gray-700" />
+            </Link>
+            <h1 className="text-xl font-bold font-hindi text-gray-800">{t.gallery_title}</h1>
+         </div>
 
-        {/* Filters */}
-        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-            <button onClick={() => { setCategory('upcoming'); setVisibleCount(12); }} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${category === 'upcoming' ? 'bg-primary text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'}`}>
-                आगामी (Upcoming)
-            </button>
-            <button onClick={() => { setCategory('all'); setVisibleCount(12); }} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${category === 'all' ? 'bg-primary text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'}`}>
-                सभी (All)
-            </button>
-            <button onClick={() => { setCategory('past'); setVisibleCount(12); }} className={`px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${category === 'past' ? 'bg-primary text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'}`}>
-                पुराने (Previous)
-            </button>
-        </div>
+         {/* Search Bar */}
+         <div className="px-4 pb-3">
+            <div className="relative group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={18} />
+                <input 
+                  type="text" 
+                  placeholder={t.search_placeholder} 
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="w-full bg-gray-100 border border-transparent focus:bg-white focus:border-primary/50 text-gray-800 rounded-2xl py-3 pl-10 pr-4 outline-none transition-all shadow-inner focus:shadow-lg text-sm font-medium"
+                />
+            </div>
+         </div>
+
+         {/* Tab Navigation (Pills) */}
+         <div className="px-4 pb-4 overflow-x-auto hide-scrollbar">
+            <div className="flex p-1 bg-gray-100 rounded-xl w-fit">
+                {[
+                  { id: 'upcoming', label: t.tab_upcoming },
+                  { id: 'all', label: t.tab_all },
+                  { id: 'past', label: t.tab_past }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => { setCategory(tab.id as any); setVisibleCount(12); }}
+                    className={`px-6 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
+                        category === tab.id 
+                        ? 'bg-white text-primary shadow-md scale-105' 
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+            </div>
+         </div>
       </div>
 
-      {/* Grid */}
-      <div className="px-4">
-        <div className="grid grid-cols-2 gap-4">
-          {visiblePosters.length > 0 ? visiblePosters.map((poster) => (
-              <Link key={poster.id} href={`/create/${poster.id}`} className="block bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
-                  <div className="aspect-[9/16] bg-gray-200 relative">
-                      {/* PERFORMANCE: loading="lazy" is crucial here */}
-                      <img 
+      {/* --- MAIN GRID CONTENT --- */}
+      <div className="p-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          
+          {loading ? (
+             // SKELETON LOADING STATE
+             Array.from({ length: 8 }).map((_, i) => <PosterSkeleton key={i} />)
+          ) : visiblePosters.length > 0 ? (
+             // ACTUAL POSTERS
+             visiblePosters.map((poster) => (
+              <Link 
+                key={poster.id} 
+                href={`/create/${poster.id}`} 
+                className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 active:scale-95 transition-transform duration-200 hover:shadow-lg"
+              >
+                  <div className="relative aspect-[9/16] bg-gray-100 overflow-hidden">
+                      {/* OPTIMIZED IMAGE: Low Quality for Grid (60%) */}
+                      <Image 
                         src={poster.image} 
                         alt={poster.title} 
-                        className="w-full h-full object-cover" 
-                        loading="lazy" 
-                        decoding="async"
+                        fill
+                        quality={60} // Low quality for speed
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                       />
+
+                      {/* Date Badge */}
                       {poster.date && (
-                          <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-md backdrop-blur-md flex items-center gap-1">
+                          <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-md backdrop-blur-md flex items-center gap-1 shadow-sm font-bold border border-white/10">
                               <Calendar size={10} /> {poster.date}
                           </div>
                       )}
+
+                      {/* Overlay on Hover */}
+                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <div className="bg-white/90 p-2 rounded-full text-primary shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                              <ChevronRight size={20} />
+                          </div>
+                      </div>
                   </div>
-                  <div className="p-3">
-                      <h3 className="font-bold text-gray-800 text-sm font-hindi line-clamp-2 h-10 leading-snug">{poster.title}</h3>
-                      <div className="flex items-center text-primary text-xs font-bold mt-2">
-                        Create <ChevronRight size={14} />
+                  
+                  {/* Footer Content */}
+                  <div className="p-3 bg-white">
+                      <h3 className="font-bold text-gray-800 text-sm font-hindi line-clamp-1 leading-snug">
+                        {translateTitle(poster.title)}
+                      </h3>
+                      <div className="flex items-center text-primary text-[10px] font-bold mt-1 uppercase tracking-wide">
+                        {t.create_card} <ChevronRight size={12} className="ml-0.5" />
                       </div>
                   </div>
               </Link>
-          )) : (
-             <div className="col-span-2 text-center py-10 text-gray-500">
-                कोई पोस्टर नहीं मिला (No posters found)
+          ))) : (
+             <div className="col-span-full py-20 flex flex-col items-center justify-center text-center opacity-60">
+                <div className="bg-gray-200 p-4 rounded-full mb-3">
+                    <Filter size={32} className="text-gray-400" />
+                </div>
+                <p className="font-bold text-gray-600 font-hindi">{t.no_results}</p>
+                <button onClick={() => {setFilter(''); setCategory('all')}} className="mt-2 text-primary text-sm font-bold underline">
+                    Clear Filters
+                </button>
              </div>
           )}
         </div>
 
         {/* Load More Button */}
-        {visibleCount < filteredPosters.length && (
-            <div className="mt-8 flex justify-center">
+        {!loading && visibleCount < filteredPosters.length && (
+            <div className="mt-8 flex justify-center pb-10">
                 <button 
-                    onClick={loadMore}
-                    className="flex items-center gap-2 bg-white text-gray-600 border border-gray-300 px-6 py-2 rounded-full font-bold shadow-sm hover:bg-gray-50 transition-colors"
+                    onClick={() => setVisibleCount(prev => prev + 12)}
+                    className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 px-6 py-3 rounded-full font-bold shadow-md hover:bg-gray-50 active:scale-95 transition-all text-sm"
                 >
-                    और देखें (Load More) <ChevronDown size={12} />
+                    {t.load_more} <ChevronDown size={14} />
                 </button>
             </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
