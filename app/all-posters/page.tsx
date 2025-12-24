@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Search, Calendar, ChevronRight, ChevronDown, ArrowLeft, Filter } from 'lucide-react';
 import { useProfile } from '@/components/ProfileContext';
 
-// --- SKELETON COMPONENT (For Loading State) ---
+// --- SKELETON COMPONENT ---
 const PosterSkeleton = () => (
   <div className="flex flex-col gap-2 animate-pulse">
     <div className="relative aspect-[9/16] bg-gray-200 rounded-2xl overflow-hidden border border-gray-100"></div>
@@ -14,50 +14,41 @@ const PosterSkeleton = () => (
 );
 
 export default function AllPostersPage() {
-  const { t, language } = useProfile(); // Use global language context
+  const { t, language, profile } = useProfile(); 
   const [posters, setPosters] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true); // Loading state
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [category, setCategory] = useState<'upcoming' | 'all' | 'past'>('upcoming');
   const [visibleCount, setVisibleCount] = useState(12);
 
-  // 1. Fetch Data
+  // AUTH LOGIC
+  const handleProtectedClick = (e: React.MouseEvent) => {
+    if (!profile.name) {
+        e.preventDefault();
+        window.dispatchEvent(new Event('open-auth'));
+    }
+  };
+
   useEffect(() => {
     fetch('/data/posters.json')
       .then(res => res.json())
-      .then(data => {
-          setPosters(data);
-          setLoading(false);
-      })
+      .then(data => { setPosters(data); setLoading(false); })
       .catch(err => console.error("Error:", err));
   }, []);
 
-  // 2. Date Logic
   const parseDate = (dateStr: string) => {
     if (!dateStr) return new Date(0);
     const [day, month, year] = dateStr.split('-').map(Number);
     return new Date(year, month - 1, day);
   };
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // 3. Dictionary for Dynamic Content (Poster Titles)
   const englishToHindiMap: Record<string, string> = {
-    "diwali": "दीपावली",
-    "deepawali": "दीपावली",
-    "holi": "होली",
-    "new year": "नववर्ष",
-    "republic day": "गणतंत्र दिवस",
-    "independence day": "स्वतंत्रता दिवस",
-    "makar sankranti": "मकर संक्रांति",
-    "christmas": "क्रिसमस",
-    "eid": "ईद",
-    "raksha bandhan": "रक्षा बंधन",
-    "dussehra": "दशहरा",
-    "navratri": "नवरात्रि",
-    "janmashtami": "जन्माष्टमी",
-    "ganesh chaturthi": "गणेश चतुर्थी"
+    "diwali": "दीपावली", "deepawali": "दीपावली", "holi": "होली", "new year": "नववर्ष",
+    "republic day": "गणतंत्र दिवस", "independence day": "स्वतंत्रता दिवस", "makar sankranti": "मकर संक्रांति",
+    "christmas": "क्रिसमस", "eid": "ईद", "raksha bandhan": "रक्षा बंधन", "dussehra": "दशहरा",
+    "navratri": "नवरात्रि", "janmashtami": "जन्माष्टमी", "ganesh chaturthi": "गणेश चतुर्थी"
   };
 
   const translateTitle = (title: string) => {
@@ -68,43 +59,26 @@ export default function AllPostersPage() {
         return title.replace(new RegExp(key, 'gi'), englishToHindiMap[key]);
       }
     }
-    return title; // Fallback to original
+    return title;
   };
 
-  // 4. Filtering & Sorting Logic
   const filteredPosters = useMemo(() => {
     let result = posters;
-
-    // A. Filter by Search
     if (filter) {
       const lowerFilter = filter.toLowerCase();
-      result = result.filter(p => 
-        p.title.toLowerCase().includes(lowerFilter) || 
-        (p.date && p.date.includes(lowerFilter))
-      );
+      result = result.filter(p => p.title.toLowerCase().includes(lowerFilter) || (p.date && p.date.includes(lowerFilter)));
     }
-
-    // B. Filter by Category
     if (category === 'upcoming') {
-      result = result.filter(p => {
-        if (!p.date) return false;
-        return parseDate(p.date) >= today;
-      }).sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime());
+      result = result.filter(p => { if (!p.date) return false; return parseDate(p.date) >= today; }).sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime());
     } else if (category === 'past') {
-      result = result.filter(p => {
-        if (!p.date) return false;
-        return parseDate(p.date) < today;
-      }).sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime()); // Most recent past first
+      result = result.filter(p => { if (!p.date) return false; return parseDate(p.date) < today; }).sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime());
     } else {
-       // All: Sort by Priority first, then Date
        result = [...result].sort((a, b) => {
-           // Put "dated" posters before "general"
            if (a.type === 'dated' && b.type === 'general') return -1;
            if (a.type === 'general' && b.type === 'dated') return 1;
            return 0;
        });
     }
-
     return result;
   }, [posters, filter, category, language]);
 
@@ -112,19 +86,13 @@ export default function AllPostersPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 pb-24 font-sans">
-      
-      {/* --- FIXED HEADER SECTION --- */}
       <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm transition-all">
-         
-         {/* Top Bar */}
          <div className="flex items-center gap-3 p-4 pt-safe pb-2">
             <Link href="/" className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition active:scale-95">
                <ArrowLeft size={24} className="text-gray-700" />
             </Link>
             <h1 className="text-xl font-bold font-hindi text-gray-800">{t.gallery_title}</h1>
          </div>
-
-         {/* Search Bar */}
          <div className="px-4 pb-3">
             <div className="relative group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={18} />
@@ -137,8 +105,6 @@ export default function AllPostersPage() {
                 />
             </div>
          </div>
-
-         {/* Tab Navigation (Pills) */}
          <div className="px-4 pb-4 overflow-x-auto hide-scrollbar">
             <div className="flex p-1 bg-gray-100 rounded-xl w-fit">
                 {[
@@ -162,48 +128,38 @@ export default function AllPostersPage() {
          </div>
       </div>
 
-      {/* --- MAIN GRID CONTENT --- */}
       <div className="p-4">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          
           {loading ? (
-             // SKELETON LOADING STATE
              Array.from({ length: 8 }).map((_, i) => <PosterSkeleton key={i} />)
           ) : visiblePosters.length > 0 ? (
-             // ACTUAL POSTERS
              visiblePosters.map((poster) => (
               <Link 
                 key={poster.id} 
                 href={`/create/${poster.id}`} 
+                onClick={handleProtectedClick}
                 className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 active:scale-95 transition-transform duration-200 hover:shadow-lg"
               >
                   <div className="relative aspect-[9/16] bg-gray-100 overflow-hidden">
-                      {/* OPTIMIZED IMAGE: Low Quality for Grid (60%) */}
                       <Image 
                         src={poster.image} 
                         alt={poster.title} 
                         fill
-                        quality={60} // Low quality for speed
+                        quality={60} 
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                       />
-
-                      {/* Date Badge */}
                       {poster.date && (
                           <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-md backdrop-blur-md flex items-center gap-1 shadow-sm font-bold border border-white/10">
                               <Calendar size={10} /> {poster.date}
                           </div>
                       )}
-
-                      {/* Overlay on Hover */}
                       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <div className="bg-white/90 p-2 rounded-full text-primary shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform">
                               <ChevronRight size={20} />
                           </div>
                       </div>
                   </div>
-                  
-                  {/* Footer Content */}
                   <div className="p-3 bg-white">
                       <h3 className="font-bold text-gray-800 text-sm font-hindi line-clamp-1 leading-snug">
                         {translateTitle(poster.title)}
@@ -215,24 +171,15 @@ export default function AllPostersPage() {
               </Link>
           ))) : (
              <div className="col-span-full py-20 flex flex-col items-center justify-center text-center opacity-60">
-                <div className="bg-gray-200 p-4 rounded-full mb-3">
-                    <Filter size={32} className="text-gray-400" />
-                </div>
+                <div className="bg-gray-200 p-4 rounded-full mb-3"><Filter size={32} className="text-gray-400" /></div>
                 <p className="font-bold text-gray-600 font-hindi">{t.no_results}</p>
-                <button onClick={() => {setFilter(''); setCategory('all')}} className="mt-2 text-primary text-sm font-bold underline">
-                    Clear Filters
-                </button>
+                <button onClick={() => {setFilter(''); setCategory('all')}} className="mt-2 text-primary text-sm font-bold underline">Clear Filters</button>
              </div>
           )}
         </div>
-
-        {/* Load More Button */}
         {!loading && visibleCount < filteredPosters.length && (
             <div className="mt-8 flex justify-center pb-10">
-                <button 
-                    onClick={() => setVisibleCount(prev => prev + 12)}
-                    className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 px-6 py-3 rounded-full font-bold shadow-md hover:bg-gray-50 active:scale-95 transition-all text-sm"
-                >
+                <button onClick={() => setVisibleCount(prev => prev + 12)} className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 px-6 py-3 rounded-full font-bold shadow-md hover:bg-gray-50 active:scale-95 transition-all text-sm">
                     {t.load_more} <ChevronDown size={14} />
                 </button>
             </div>

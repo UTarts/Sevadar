@@ -70,7 +70,7 @@ export const translations = {
     police_stations: "Police Stations",
     municipality: "Municipality",
     blocks: "Blocks",
-    polling_stations: "Polling Stations",
+    polling_stations: "Polling Booths",
 
     // Exit Popup
     exit_app: "Exit App?",
