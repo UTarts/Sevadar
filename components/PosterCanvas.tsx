@@ -46,7 +46,7 @@ export default function PosterCanvas({
       // --- ADMIN MODE ---
       if (isAdmin) {
         const adminFooter = new Image();
-        adminFooter.src = '/posters/admin_footer.png';
+        adminFooter.src = '/posters/admin_footer.webp';
         adminFooter.crossOrigin = "anonymous";
         
         adminFooter.onload = () => {
@@ -56,7 +56,7 @@ export default function PosterCanvas({
 
             // --- CONTROL: Move Footer Up/Down ---
             // Higher number = Higher up on screen
-            const footerBottomOffset = 120; 
+            const footerBottomOffset = 1; 
             
             const y = canvas.height - drawHeight - footerBottomOffset;
             ctx.drawImage(adminFooter, 0, y, drawWidth, drawHeight);
