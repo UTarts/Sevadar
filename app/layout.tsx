@@ -22,30 +22,34 @@ const kalam = Kalam({
 });
 
 export const metadata: Metadata = {
-  title: "Mission 2029",
-  description: "Jai Bharat, Jai Pratapgarh",
+  title: "Sevadar Pratapgarh - Brijesh Tiwari",
+  description: "Jai Bharat, Jai Pratapgarh | Lok Sabha Mission 2029",
   manifest: "/manifest.json",
- 
   icons: {
-    icon: '/logo.webp',     
+    icon: '/logo.webp',
     shortcut: '/logo.webp',
-    apple: '/logo.webp',    
+    apple: '/logo.webp',
   },
-  
   openGraph: {
-    title: "Mission 2029",
-    description: "Jai Bharat, Jai Pratapgarh",
+    title: "Sevadar Pratapgarh - Brijesh Tiwari",
+    description: "Jai Bharat, Jai Pratapgarh | Lok Sabha Mission 2029",
     url: 'https://brijeshtiwari.in',
     siteName: 'Mission 2029',
     images: [
       {
-        url: '/logo.webp', 
+        url: 'https://brijeshtiwari.in/logo.webp', 
         width: 800,
-        height: 600,
+        height: 800,
         alt: 'Mission 2029 Logo',
       },
     ],
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Sevadar Pratapgarh - Brijesh Tiwari',
+    description: 'Jai Bharat, Jai Pratapgarh | Lok Sabha Mission 2029',
+    images: ['https://brijeshtiwari.in/logo.webp'],
   },
 };
 
