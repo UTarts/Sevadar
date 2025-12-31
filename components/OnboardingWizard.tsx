@@ -117,7 +117,7 @@ export default function OnboardingWizard() {
       const { error } = await supabase.from('profiles').update({
           full_name: formData.name,
           village: formData.village,
-          designation: formData.designation || 'Active Member',
+          designation: formData.designation || 'नागरिक',
           avatar_url: formData.photo,
           setup_complete: true,
           points: 10
@@ -129,7 +129,7 @@ export default function OnboardingWizard() {
           updateProfile({ 
               name: formData.name, 
               village: formData.village, 
-              designation: formData.designation || 'Active Member',
+              designation: formData.designation || 'नागरिक',
               photo: formData.photo,
               setup_complete: true 
           });
