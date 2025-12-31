@@ -26,22 +26,31 @@ function parseDate(dateStr: string): Date {
   return new Date(year, month - 1, day);
 }
 
+// --- NEW HELPER: FORCE IST TIME (UTC + 5:30) ---
+function getISTDate(): Date {
+  const now = new Date();
+  // Get UTC time in milliseconds
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  // Add 5.5 hours (IST Offset)
+  const istOffset = 5.5 * 60 * 60 * 1000; 
+  return new Date(utc + istOffset);
+}
+
 export async function getTodaysPosters() {
   const allPosters = await getPosters();
   
-  // REAL DATE LOGIC
-  const todayObj = new Date();
+  // FIX: Use IST Time, not Server Time
+  const todayObj = getISTDate();
   const todayStr = `${String(todayObj.getDate()).padStart(2, '0')}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${todayObj.getFullYear()}`;
   
-  // NOTE: For testing purposes, if you want to see the 26 Jan poster, uncomment the line below:
-  // const todayStr = "26-01-2026"; 
-
   return allPosters.filter(p => p.date === todayStr);
 }
 
 export async function getUpcomingPosters() {
   const allPosters = await getPosters();
-  const todayObj = new Date(); // Current Real Time
+  
+  // FIX: Use IST Time here too, so upcoming logic matches reality
+  const todayObj = getISTDate(); 
   
   // Filter for dates AFTER today
   return allPosters
@@ -56,7 +65,6 @@ export async function getGeneralPosters() {
   return allPosters.filter(p => p.type === 'general');
 }
 
-// ADDED THIS SO CREATE PAGE DOESN'T CRASH
 export async function getPosterById(id: string) {
   const allPosters = await getPosters();
   return allPosters.find(p => p.id === id);
