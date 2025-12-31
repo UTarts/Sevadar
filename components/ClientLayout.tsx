@@ -24,7 +24,20 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       window.removeEventListener('open-auth', handleOpenAuth);
     };
   }, []);
+  
+  useEffect(() => {
+    const handleInstallPrompt = (e: Event) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      console.log('Automatic install prompt suppressed');
+    };
 
+    window.addEventListener('beforeinstallprompt', handleInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
+    };
+  }, []);
   return (
     <ProfileProvider>
       {children}
