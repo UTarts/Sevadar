@@ -21,7 +21,12 @@ export default function QuizWidget() {
 
   const fetchDailyQuiz = async () => {
       try {
-          const today = new Date().toISOString().split('T')[0];
+          // --- FIX: FORCE IST DATE ---
+          const now = new Date();
+          const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+          const istDate = new Date(utc + (5.5 * 60 * 60 * 1000));
+          const today = istDate.toISOString().split('T')[0]; // "YYYY-MM-DD"
+          // ---------------------------
 
           // 1. Fetch Quiz
           const { data: quizData, error } = await supabase
@@ -34,13 +39,12 @@ export default function QuizWidget() {
           setQuiz(quizData);
 
           // --- ADMIN VIEW LOGIC ---
-          // Use 'quizData' directly here, NOT 'quiz' state (which is still null)
           if (profile.is_admin) {
-              setHasPlayed(true); // Lock the quiz
-              setSelected(quizData.correct_index); // Highlight correct answer
-              setIsCorrect(true); // Show green
+              setHasPlayed(true); 
+              setSelected(quizData.correct_index); 
+              setIsCorrect(true); 
               setLoading(false);
-              return; // Stop here for admin
+              return; 
           }
 
           // 2. Check History (Normal User)
@@ -66,9 +70,7 @@ export default function QuizWidget() {
   };
 
   const handleOptionClick = async (index: number) => {
-      // Admin Check (Double safety)
       if (profile.is_admin) return;
-
       if (hasPlayed || submitting || !quiz) return;
       
       if (!profile.name) {
@@ -85,7 +87,6 @@ export default function QuizWidget() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // 3. Save to DB
       const { error } = await supabase.from('quiz_submissions').insert({
           user_id: user.id,
           quiz_id: quiz.id,
@@ -112,7 +113,6 @@ export default function QuizWidget() {
   if (loading) return <div className="h-32 bg-gray-100 rounded-3xl animate-pulse mb-4" />;
   if (!quiz) return null;
 
-  // Render Logic
   return (
     <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden mb-4">
        <div className="absolute top-0 right-0 w-24 h-24 bg-orange-50 rounded-bl-full -mr-4 -mt-4 z-0"></div>
@@ -141,7 +141,6 @@ export default function QuizWidget() {
                }
            </div>
 
-           {/* Result Message */}
            {hasPlayed && !profile.is_admin && (
                <div className={`mt-4 text-center text-xs font-bold p-3 rounded-xl animate-in slide-in-from-top-2 ${isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                    {isCorrect ? `🎉 सही जवाब! आपको ${quiz.points} अंक मिले।` : "❌ गलत जवाब। कल फिर कोशिश करें!"}
@@ -153,7 +152,6 @@ export default function QuizWidget() {
 
   function renderOption(opt: string, idx: number) {
        let stateStyle = "border-gray-200 bg-white hover:bg-gray-50";
-       
        if (selected !== null) {
            if (idx === quiz.correct_index) {
                stateStyle = "border-green-500 bg-green-50 text-green-800";
