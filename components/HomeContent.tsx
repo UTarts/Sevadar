@@ -121,7 +121,10 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
               <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded animate-pulse">LIVE</span>
               <h2 className="text-xl font-bold text-gray-800 font-hindi">{t.todays_special}</h2>
             </div>
-            <div className="flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar">
+            
+            {/* MODIFIED LINE: Added conditional 'justify-center' */}
+            <div className={`flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar ${todaysPosters.length === 1 ? 'justify-center' : ''}`}>
+              
               {todaysPosters.map((poster: any, index: number) => (
                 <div key={poster.id} className="min-w-[85%] sm:min-w-[350px] snap-center bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 relative group aspect-[9/16]">
                   <Image 
