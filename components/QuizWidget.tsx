@@ -20,54 +20,66 @@ export default function QuizWidget() {
   }, [profile.name]);
 
   const fetchDailyQuiz = async () => {
-      try {
-          // --- FIX: FORCE IST DATE ---
-          const now = new Date();
-          const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-          const istDate = new Date(utc + (5.5 * 60 * 60 * 1000));
-          const today = istDate.toISOString().split('T')[0]; // "YYYY-MM-DD"
-          // ---------------------------
+        try {
+            // 1. ROBUST IST DATE LOGIC (Works on Localhost & Server)
+            // 'en-CA' format always gives YYYY-MM-DD
+            const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+            
+            console.log("Checking Quiz for Date:", today); // <--- DEBUG LOG
 
-          // 1. Fetch Quiz
-          const { data: quizData, error } = await supabase
-              .from('daily_quizzes')
-              .select('*')
-              .eq('date', today)
-              .single();
+            // 2. Fetch Quiz
+            const { data: quizData, error } = await supabase
+                .from('daily_quizzes')
+                .select('*')
+                .eq('date', today)
+                .single();
 
-          if (error || !quizData) { setLoading(false); return; }
-          setQuiz(quizData);
+            if (error) {
+            console.log("Supabase Error:", error.message); // <--- DEBUG LOG
+            setLoading(false); 
+            return; 
+            }
+            
+            if (!quizData) {
+            console.log("No quiz found for today."); // <--- DEBUG LOG
+            setLoading(false);
+            return;
+            }
 
-          // --- ADMIN VIEW LOGIC ---
-          if (profile.is_admin) {
-              setHasPlayed(true); 
-              setSelected(quizData.correct_index); 
-              setIsCorrect(true); 
-              setLoading(false);
-              return; 
-          }
+            console.log("Quiz Found:", quizData.question); // <--- DEBUG LOG
+            setQuiz(quizData);
 
-          // 2. Check History (Normal User)
-          if (profile.name) {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (user) {
-                  const { data: submission } = await supabase
-                      .from('quiz_submissions')
-                      .select('*')
-                      .eq('user_id', user.id)
-                      .eq('quiz_id', quizData.id)
-                      .single();
+            // ... (Rest of the function: Admin logic, History check etc. - KEEP AS IS)
+            // --- ADMIN VIEW LOGIC ---
+            if (profile.is_admin) {
+                setHasPlayed(true);
+                setSelected(quizData.correct_index);
+                setIsCorrect(true);
+                setLoading(false);
+                return;
+            }
 
-                  if (submission) {
-                      setHasPlayed(true);
-                      setSelected(submission.selected_index);
-                      setIsCorrect(submission.is_correct);
-                  }
-              }
-          }
-      } catch (e) { console.error(e); }
-      setLoading(false);
-  };
+            // 2. Check History (Normal User)
+            if (profile.name) {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const { data: submission } = await supabase
+                        .from('quiz_submissions')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .eq('quiz_id', quizData.id)
+                        .single();
+
+                    if (submission) {
+                        setHasPlayed(true);
+                        setSelected(submission.selected_index);
+                        setIsCorrect(submission.is_correct);
+                    }
+                }
+            }
+        } catch (e) { console.error(e); }
+        setLoading(false);
+    };
 
   const handleOptionClick = async (index: number) => {
       if (profile.is_admin) return;

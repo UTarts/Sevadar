@@ -16,32 +16,41 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 export const requestNotificationPermission = async (userId?: string) => {
-  try {
-    const supported = await isSupported();
-    if (!supported) {
-      console.log("Notifications not supported on this browser");
+    try {
+      const supported = await isSupported();
+      if (!supported) return null;
+  
+      const messaging = getMessaging(app);
+      const permission = await Notification.requestPermission();
+  
+      if (permission === 'granted') {
+        // --- CHANGE STARTS HERE ---
+        // Manually register the specific file
+        let registration;
+        try {
+           registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        } catch (err) {
+           console.error("SW Register Fail:", err);
+           // Fallback: Try getting existing registration
+           registration = await navigator.serviceWorker.getRegistration();
+        }
+  
+        const token = await getToken(messaging, {
+          vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+          serviceWorkerRegistration: registration 
+        });
+        // --- CHANGE ENDS HERE ---
+  
+        if (token && userId) {
+          await saveTokenToDatabase(token, userId);
+        }
+        return token;
+      }
+    } catch (error) {
+      console.error("Notification permission error:", error);
       return null;
     }
-
-    const messaging = getMessaging(app);
-    const permission = await Notification.requestPermission();
-    
-    if (permission === 'granted') {
-      const token = await getToken(messaging, {
-        vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY
-      });
-
-      if (token && userId) {
-        // Save token to Supabase
-        await saveTokenToDatabase(token, userId);
-      }
-      return token;
-    }
-  } catch (error) {
-    console.error("Notification permission error:", error);
-    return null;
-  }
-};
+  };
 
 async function saveTokenToDatabase(token: string, userId: string) {
   // Check if token exists to avoid duplicates
