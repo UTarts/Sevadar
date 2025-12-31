@@ -46,7 +46,7 @@ export default function PosterCanvas({
       // --- ADMIN MODE ---
       if (isAdmin) {
         const adminFooter = new Image();
-        adminFooter.src = '/posters/admin_footer.webp';
+        adminFooter.src = '/posters/admin_footer1.webp';
         adminFooter.crossOrigin = "anonymous";
         
         adminFooter.onload = () => {
