@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins, Tiro_Devanagari_Hindi, Kalam } from "next/font/google";
 import "./globals.css";
-import ClientLayout from "@/components/ClientLayout"; // Import the new wrapper
+import ClientLayout from "@/components/ClientLayout"; 
 
 const poppins = Poppins({ 
   subsets: ["latin"], 
@@ -24,7 +24,29 @@ const kalam = Kalam({
 export const metadata: Metadata = {
   title: "Mission 2029",
   description: "Jai Bharat, Jai Pratapgarh",
-  manifest: "/manifest.json", 
+  manifest: "/manifest.json",
+ 
+  icons: {
+    icon: '/logo.webp',     
+    shortcut: '/logo.webp',
+    apple: '/logo.webp',    
+  },
+  
+  openGraph: {
+    title: "Mission 2029",
+    description: "Jai Bharat, Jai Pratapgarh",
+    url: 'https://brijeshtiwari.in',
+    siteName: 'Mission 2029',
+    images: [
+      {
+        url: '/logo.webp', 
+        width: 800,
+        height: 600,
+        alt: 'Mission 2029 Logo',
+      },
+    ],
+    type: 'website',
+  },
 };
 
 export const viewport: Viewport = {
@@ -42,7 +64,6 @@ export default function RootLayout({
   return (
     <html lang="hi">
       <body className={`${poppins.variable} ${tiro.variable} ${kalam.variable} bg-neutral-100 overflow-x-hidden`}>
-        {/* Use the new ClientLayout to wrap everything */}
         <ClientLayout>
           {children}
         </ClientLayout>
