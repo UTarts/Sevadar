@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Poppins, Tiro_Devanagari_Hindi, Kalam } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout"; 
-import Script from "next/script"; // Import Script for JSON-LD
+import Script from "next/script"; 
+import NotificationPrompt from '@/components/NotificationPrompt';
 
 const poppins = Poppins({ 
   subsets: ["latin"], 
@@ -124,6 +125,7 @@ export default function RootLayout({
         <ClientLayout>
           {children}
         </ClientLayout>
+        <NotificationPrompt lang="hi" />
       </body>
     </html>
   );

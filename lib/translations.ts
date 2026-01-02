@@ -240,5 +240,19 @@ export const translations = {
     
     faq_7_q: "मैं अपना पासवर्ड भूल गया हूँ। रिसेट कैसे करें?",
     faq_7_a: "लॉगिन स्क्रीन पर 'पासवर्ड भूल गए?' पर क्लिक करें। रिसेट करने के लिए आपको अपना फोन नंबर और अपने सुरक्षा प्रश्न (माता जी के गाँव का नाम) का उत्तर देना होगा।"
-  }
+  },
+  notificationParams: {
+    en: {
+      title: "Stay Connected",
+      message: "Get important news regarding Sevadar events and Pratapgarh directly on your mobile.",
+      allowBtn: "Yes, Notify Me",
+      laterBtn: "Not Now"
+    },
+    hi: {
+      title: "हमसे जुड़े रहें",
+      message: "प्रतापगढ़ और सेवादार मुहिम की हर खबर और कार्यक्रम की जानकारी सीधे अपने मोबाइल पर पाएं।",
+      allowBtn: "हाँ, अनुमति दें",
+      laterBtn: "अभी नहीं"
+    }
+  },
 };
