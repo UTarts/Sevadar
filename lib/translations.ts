@@ -77,7 +77,7 @@ export const translations = {
 
     // --- AUTH & SECURITY ---
     phone_number: "Phone Number",
-    password: "Password",
+    password: "Password (At least 6 characters)",
     forgot_password: "Forgot Password?",
     security_hint: "Write your mother's village name. This will be used for account recovery in case you forget your password.",
     secret_question_label: "Security Answer (Mother's Village)",
@@ -198,7 +198,7 @@ export const translations = {
 
     // --- AUTH & SECURITY ---
     phone_number: "मोबाइल नंबर",
-    password: "पासवर्ड",
+    password: "पासवर्ड ( कम से कम 6 अंकों का )",
     forgot_password: "पासवर्ड भूल गए?",
     security_hint: "अपनी माता जी के गाँव का नाम लिखें। यदि आप अपना पासवर्ड भूल जाते हैं, तो इसका उपयोग खाता रिकवर करने के लिए किया जाएगा।",
     secret_question_label: "सुरक्षा उत्तर (माता जी का गाँव)",
