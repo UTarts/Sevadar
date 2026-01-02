@@ -497,7 +497,11 @@ export default function HomeContent({ allPosters }: any) {
                 />
                 <br/>visit www.utarts.in
              </a>
+             <Link href="/privacy-policy" className="hover:text-[#FF9933] transition-colors">
+                Privacy Policy
+              </Link> | &copy; 2024 Brijesh Tiwari Sevadar
            </div>
+           
         </div>
 
       </div>
