@@ -499,7 +499,7 @@ export default function HomeContent({ allPosters }: any) {
              </a>
              <Link href="/privacy-policy" className="hover:text-[#FF9933] transition-colors">
                 Privacy Policy
-              </Link> | &copy; 2024 Brijesh Tiwari Sevadar
+              </Link> | &copy; 2025 Brijesh Tiwari Sevadar
            </div>
            
         </div>

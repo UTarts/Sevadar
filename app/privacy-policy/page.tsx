@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPolicy() {
   return (
-    <main className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8 text-gray-800 dark:text-gray-200">
+    <main className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8 bg-black text-gray-100">
       <h1 className="text-3xl font-bold mb-6 text-[#FF9933]">Privacy Policy</h1>
       <p className="mb-4 text-sm text-gray-500">Last Updated: January 02, 2026</p>
 
@@ -51,7 +51,7 @@ export default function PrivacyPolicy() {
         <p>If you have any questions about this Privacy Policy, please contact us:</p>
         <ul className="list-disc pl-5">
           <li>By email: <a href="mailto:info@utarts.in" className="text-[#FF9933] hover:underline">info@utarts.in</a></li>
-          <li>By visiting this page on our website: <a href="https://brijeshtiwari.in" className="text-[#FF9933] hover:underline">www.utarts.in</a> (Sevadar Project)</li>
+          <li>By visiting this page on our website: <a href="https://www.utarts.in" className="text-[#FF9933] hover:underline">www.utarts.in</a> (Sevadar Project)</li>
         </ul>
       </section>
     </main>
