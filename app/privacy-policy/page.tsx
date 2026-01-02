@@ -47,6 +47,17 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="mb-8 space-y-4">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">5. Delete Your Account</h2>
+        <p>
+          You have the right to request the deletion of your account and all associated data. To do so, please follow these steps:
+        </p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>Send an email to <strong>info@utarts.in</strong> with the subject line "Account Deletion Request : Sevadar App".</li>
+          <li>Include the Phone Number associated with your account.</li>
+          <li>We will verify your identity and permanently delete your account and data within 30 days.</li>
+        </ul>
+      </section>
+      <section className="mb-8 space-y-4">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">4. Contact Us</h2>
         <p>If you have any questions about this Privacy Policy, please contact us:</p>
         <ul className="list-disc pl-5">
