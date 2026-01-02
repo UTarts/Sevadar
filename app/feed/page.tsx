@@ -23,7 +23,7 @@ interface Comment {
   content: string;
   created_at: string;
   user_id: string; // Added to identify user for reporting
-  profiles: { full_name: string; avatar_url: string; is_admin: boolean; };
+  profiles: { full_name: string; avatar_url: string; is_admin: boolean; phone: string; };
 }
 
 // --- HELPERS ---
@@ -410,7 +410,11 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
         }
 
         const fetchComments = async () => {
-            const { data } = await supabase.from('feed_comments').select('*, profiles(full_name, avatar_url, is_admin)').eq('post_id', postId).order('created_at', { ascending: false }); 
+            const { data } = await supabase
+                .from('feed_comments')
+                .select('*, profiles(full_name, avatar_url, is_admin, phone)') 
+                .eq('post_id', postId)
+                .order('created_at', { ascending: false }); 
             if (data) setComments(data as any);
             setLoading(false);
         };
@@ -428,7 +432,11 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
         const { error } = await supabase.from('feed_comments').insert({ post_id: postId, user_id: user.id, content: newComment });
         if (!error) {
             setNewComment('');
-            const { data } = await supabase.from('feed_comments').select('*, profiles(full_name, avatar_url, is_admin)').eq('post_id', postId).order('created_at', { ascending: false });
+            const { data } = await supabase
+                .from('feed_comments')
+                .select('*, profiles(full_name, avatar_url, is_admin, phone)')
+                .eq('post_id', postId)
+                .order('created_at', { ascending: false });
             if (data) setComments(data as any);
         }
         setSending(false);
@@ -441,11 +449,10 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
 
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-            // Uses the existing 'messages' table from SuggestionBox
             await supabase.from('messages').insert({
                 user_id: user.id,
                 category: "Report User/Comment",
-                content: `REPORTED USER: ${reportingComment.profiles?.full_name} (ID: ${reportingComment.user_id}) \nREASON: ${reportReason} \nCOMMENT: "${reportingComment.content}"`,
+                content: `REPORTED USER: ${reportingComment.profiles?.full_name} \nPHONE: ${reportingComment.profiles?.phone || 'N/A'} \nREASON: ${reportReason} \nCOMMENT: "${reportingComment.content}"`,
                 status: 'pending'
             });
             setReportSuccess(true);
