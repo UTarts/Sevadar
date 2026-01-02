@@ -1,0 +1,12 @@
+[
+    {
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "in.utarts.sevadar",
+        "sha256_cert_fingerprints": [
+          "3F:FA:17:6B:3D:AB:E9:B9:1F:37:2E:42:E1:7D:67:4F:6C:11:7C:06:E0:B8:0B:6D:37:6B:21:60:7A:EF:60:CA"
+        ]
+      }
+    }
+  ]
