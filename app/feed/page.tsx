@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { Loader2, Share2, Heart, Volume2, VolumeX, ArrowLeft, MessageCircle, X, Send, ShieldCheck, User, Play, Pause } from 'lucide-react';
+import { Loader2, Share2, Heart, Volume2, VolumeX, ArrowLeft, MessageCircle, X, Send, ShieldCheck, User, Play, Pause, Flag, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useProfile } from '@/components/ProfileContext';
@@ -22,6 +22,7 @@ interface Comment {
   id: string;
   content: string;
   created_at: string;
+  user_id: string; // Added to identify user for reporting
   profiles: { full_name: string; avatar_url: string; is_admin: boolean; };
 }
 
@@ -386,15 +387,28 @@ function RobustCarousel({ post, isVisible, onComplete }: { post: FeedPost, isVis
     );
 }
 
-// --- COMMENTS ---
+// --- COMMENTS & REPORTING & BLOCKING SYSTEM ---
 function CommentModal({ postId, onClose }: { postId: string, onClose: () => void }) {
     const { profile, updateProfile } = useProfile();
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState('');
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+    const [blockedUsers, setBlockedUsers] = useState<string[]>([]); // LOCAL BLOCK LIST
+
+    // REPORT SYSTEM STATES
+    const [reportingComment, setReportingComment] = useState<Comment | null>(null);
+    const [reportReason, setReportReason] = useState('Spam/Scam');
+    const [reportLoading, setReportLoading] = useState(false);
+    const [reportSuccess, setReportSuccess] = useState(false);
 
     useEffect(() => {
+        // 1. LOAD BLOCKED USERS FROM LOCAL STORAGE
+        const savedBlocks = localStorage.getItem('sevadar_blocked_users');
+        if (savedBlocks) {
+            setBlockedUsers(JSON.parse(savedBlocks));
+        }
+
         const fetchComments = async () => {
             const { data } = await supabase.from('feed_comments').select('*, profiles(full_name, avatar_url, is_admin)').eq('post_id', postId).order('created_at', { ascending: false }); 
             if (data) setComments(data as any);
@@ -420,26 +434,147 @@ function CommentModal({ postId, onClose }: { postId: string, onClose: () => void
         setSending(false);
     };
 
+    // --- REPORT SUBMISSION LOGIC ---
+    const handleReportSubmit = async () => {
+        if (!reportingComment) return;
+        setReportLoading(true);
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            // Uses the existing 'messages' table from SuggestionBox
+            await supabase.from('messages').insert({
+                user_id: user.id,
+                category: "Report User/Comment",
+                content: `REPORTED USER: ${reportingComment.profiles?.full_name} (ID: ${reportingComment.user_id}) \nREASON: ${reportReason} \nCOMMENT: "${reportingComment.content}"`,
+                status: 'pending'
+            });
+            setReportSuccess(true);
+            setTimeout(() => {
+                setReportSuccess(false);
+                setReportingComment(null); // Close modal
+            }, 2000);
+        } else {
+             window.dispatchEvent(new Event('open-auth'));
+        }
+        setReportLoading(false);
+    };
+
+    // --- BLOCK USER LOGIC (Local Storage Only) ---
+    const handleBlockUser = () => {
+        if (!reportingComment) return;
+        const userIdToBlock = reportingComment.user_id;
+        
+        // 1. Update State
+        const newBlockedList = [...blockedUsers, userIdToBlock];
+        setBlockedUsers(newBlockedList);
+        
+        // 2. Save to Local Storage
+        localStorage.setItem('sevadar_blocked_users', JSON.stringify(newBlockedList));
+        
+        // 3. Close Modal
+        setReportingComment(null);
+        alert("User blocked. You will not see their comments again.");
+    };
+
+    // FILTER COMMENTS (Hide Blocked Users)
+    const visibleComments = comments.filter(c => !blockedUsers.includes(c.user_id));
+
     return (
         <div className="absolute inset-0 z-[100] flex flex-col justify-end bg-black/60 animate-in fade-in duration-200">
-            <div className="h-[60vh] bg-white rounded-t-3xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300 shadow-2xl">
+            <div className="h-[60vh] bg-white rounded-t-3xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300 shadow-2xl relative">
+                
+                {/* --- REPORT/BLOCK MODAL OVERLAY --- */}
+                {reportingComment && (
+                    <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in-95">
+                         {reportSuccess ? (
+                             <div className="text-center">
+                                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
+                                     <CheckCircle2 size={32}/>
+                                 </div>
+                                 <h3 className="font-bold text-lg text-gray-800">Report Submitted</h3>
+                                 <p className="text-sm text-gray-500 mt-1">Thank you for keeping our community safe.</p>
+                             </div>
+                         ) : (
+                             <div className="w-full max-w-sm bg-white border border-gray-200 shadow-xl rounded-2xl p-5">
+                                 <div className="flex items-center gap-2 mb-4 text-red-600">
+                                     <AlertTriangle size={24}/>
+                                     <h3 className="font-bold text-lg">Report or Block</h3>
+                                 </div>
+                                 <p className="text-xs text-gray-500 mb-4">
+                                     Selected: <span className="font-bold text-gray-800">{reportingComment.profiles?.full_name}</span>
+                                     <br/>"{reportingComment.content.substring(0, 30)}..."
+                                 </p>
+                                 
+                                 <label className="block text-xs font-bold text-gray-700 mb-2">Report Reason:</label>
+                                 <select 
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4 text-sm outline-none focus:border-red-500 transition"
+                                    value={reportReason}
+                                    onChange={(e) => setReportReason(e.target.value)}
+                                 >
+                                     <option>Spam/Scam</option>
+                                     <option>Harassment/Abuse</option>
+                                     <option>Hate Speech</option>
+                                     <option>Inappropriate Content</option>
+                                     <option>Other</option>
+                                 </select>
+
+                                 <div className="flex flex-col gap-3">
+                                     <div className="flex gap-3">
+                                        <button 
+                                            onClick={() => setReportingComment(null)} 
+                                            className="flex-1 py-2.5 bg-gray-100 font-bold text-gray-600 rounded-xl text-sm active:scale-95 transition"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button 
+                                            onClick={handleReportSubmit} 
+                                            disabled={reportLoading}
+                                            className="flex-1 py-2.5 bg-red-600 font-bold text-white rounded-xl text-sm active:scale-95 transition shadow-lg shadow-red-500/30 flex items-center justify-center gap-2"
+                                        >
+                                            {reportLoading ? <Loader2 size={16} className="animate-spin"/> : 'Report'}
+                                        </button>
+                                     </div>
+                                     
+                                     {/* BLOCK BUTTON */}
+                                     <button 
+                                        onClick={handleBlockUser}
+                                        className="w-full py-2.5 border-2 border-gray-200 font-bold text-gray-500 rounded-xl text-sm active:scale-95 transition hover:bg-gray-50"
+                                     >
+                                         Block User (Hide Content)
+                                     </button>
+                                 </div>
+                             </div>
+                         )}
+                    </div>
+                )}
+
                 <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-                    <h3 className="font-bold text-gray-800">Comments ({comments.length})</h3>
+                    <h3 className="font-bold text-gray-800">Comments ({visibleComments.length})</h3>
                     <button onClick={onClose} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition"><X size={16} className="text-gray-600"/></button>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {loading ? <div className="flex justify-center p-4"><Loader2 className="animate-spin text-gray-400"/></div> : comments.map(c => (
-                        <div key={c.id} className="flex gap-3 animate-in slide-in-from-bottom-2">
+                    {loading ? <div className="flex justify-center p-4"><Loader2 className="animate-spin text-gray-400"/></div> : visibleComments.map(c => (
+                        <div key={c.id} className="flex gap-3 animate-in slide-in-from-bottom-2 group">
                             <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden shrink-0 border border-gray-200 relative">
                                 {c.profiles?.avatar_url ? <Image src={c.profiles.avatar_url} alt="User" fill className="object-cover"/> : <User className="p-1 w-full h-full text-gray-400"/>}
                             </div>
-                            <div className="flex-1 bg-gray-50 p-3 rounded-2xl rounded-tl-none text-sm border border-gray-100">
-                                <div className="flex items-center gap-1.5 mb-1">
-                                    <span className="font-bold text-xs text-gray-900">{c.profiles?.full_name || 'User'}</span>
-                                    {c.profiles?.is_admin && <span className="bg-blue-100 text-blue-600 text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5"><ShieldCheck size={10}/> Admin</span>}
+                            <div className="flex-1 relative">
+                                <div className="bg-gray-50 p-3 rounded-2xl rounded-tl-none text-sm border border-gray-100 pr-8">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <span className="font-bold text-xs text-gray-900">{c.profiles?.full_name || 'User'}</span>
+                                        {c.profiles?.is_admin && <span className="bg-blue-100 text-blue-600 text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5"><ShieldCheck size={10}/> Admin</span>}
+                                    </div>
+                                    <p className="text-gray-700 leading-relaxed text-xs sm:text-sm">{c.content}</p>
                                 </div>
-                                <p className="text-gray-700 leading-relaxed text-xs sm:text-sm">{c.content}</p>
+                                {/* REPORT BUTTON - Visible on Hover/Click */}
+                                <button 
+                                    onClick={() => setReportingComment(c)} 
+                                    className="absolute top-2 right-2 text-gray-300 hover:text-red-500 transition p-1"
+                                    title="Report / Block"
+                                >
+                                    <Flag size={12} />
+                                </button>
                             </div>
                         </div>
                     ))}
