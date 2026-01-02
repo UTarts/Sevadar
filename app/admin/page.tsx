@@ -6,7 +6,7 @@ import { useProfile } from '@/components/ProfileContext';
 import { 
   Search, Download, LogOut, Loader2, User, 
   Send, Trash2, Video, Plus, Check, 
-  MessageSquare, CheckCircle2, Calendar, Phone, X, Languages
+  MessageSquare, CheckCircle2, Calendar, Phone, X, Languages, Edit2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -45,7 +45,14 @@ export default function AdminDashboard() {
   const [pollOptions, setPollOptions] = useState(['', '']);
 
   // Quiz Form
-  const [quizDate, setQuizDate] = useState(new Date().toISOString().split('T')[0]);
+  // FIX: Use LOCAL date instead of UTC to prevent "yesterday" bugs
+  const getLocalDate = () => {
+      const d = new Date();
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      return d.toISOString().split('T')[0];
+  };
+
+  const [quizDate, setQuizDate] = useState(getLocalDate());
   const [quizQuestion, setQuizQuestion] = useState('');
   const [quizOptions, setQuizOptions] = useState(['', '', '', '']);
   const [quizCorrectIdx, setQuizCorrectIdx] = useState(0);
@@ -61,7 +68,7 @@ export default function AdminDashboard() {
   // --- LOAD ALL DATA (OPTIMIZED: Parallel Fetching) ---
   const loadAllData = async () => {
       setLoading(true);
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDate(); // FIX: Use Local Date for filtering
       
       try {
         const [
@@ -134,14 +141,16 @@ export default function AdminDashboard() {
     doc.save('sevadar_suggestions.pdf');
   };
 
-  // --- HANDLERS (Unchanged logic) ---
+  // --- HANDLERS ---
   const handleMarkRead = async (id: string) => { await supabase.from('messages').update({ status: 'read' }).eq('id', id); loadAllData(); };
   const handleReply = async (id: string) => { if (!replyText) return; await supabase.from('messages').update({ status: 'replied', admin_reply: replyText }).eq('id', id); setReplyingId(null); setReplyText(''); loadAllData(); };
   const deleteMessage = async (id: string) => { if(confirm("Delete this message?")) { await supabase.from('messages').delete().eq('id', id); loadAllData(); } };
+  
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => { 
-    const files = e.target.files;
+    const files = e.target.files; // 1. Capture files here
     if (files) {
-      setFeedFiles(prev => [...prev, ...Array.from(files)]);
+      // 2. Use the 'files' variable, which TypeScript now knows is safe
+      setFeedFiles(prev => [...prev, ...Array.from(files)]); 
     }
   };
   
@@ -168,8 +177,52 @@ export default function AdminDashboard() {
   const deleteFeed = async (id: string) => { if(confirm("Delete?")) { await supabase.from('feed_posts').delete().eq('id', id); loadAllData(); } };
   const handlePollSubmit = async () => { const validOptions = pollOptions.filter(o => o.trim() !== ''); if (!pollQuestion || validOptions.length < 2) return alert("Question + 2 Options required"); await supabase.from('polls').insert({ question: pollQuestion, options: validOptions, is_active: true }); loadAllData(); alert("Poll Created!"); setPollQuestion(''); setPollOptions(['', '']); };
   const deletePoll = async (id: string) => { if(confirm("Delete?")) { await supabase.from('polls').delete().eq('id', id); loadAllData(); } };
-  const handleQuizSubmit = async () => { if (!quizQuestion || quizOptions.some(o => !o)) return alert("Fill all fields"); await supabase.from('daily_quizzes').upsert({ date: quizDate, question: quizQuestion, options: quizOptions, correct_index: quizCorrectIdx, points: 5 }, { onConflict: 'date' }); loadAllData(); alert("Quiz Saved for " + quizDate); };
-  const deleteQuiz = async (id: string) => { if(confirm("Delete this scheduled quiz?")) { await supabase.from('daily_quizzes').delete().eq('id', id); loadAllData(); } };
+  
+  // --- QUIZ LOGIC (FIXED) ---
+  const handleQuizSubmit = async () => {
+      if (!quizQuestion || quizOptions.some(o => !o)) return alert("Fill all fields");
+      const { error } = await supabase.from('daily_quizzes').upsert({
+          date: quizDate,
+          question: quizQuestion,
+          options: quizOptions,
+          correct_index: quizCorrectIdx,
+          points: 5
+      }, { onConflict: 'date' });
+
+      if (!error) { 
+          alert("Quiz Saved for " + quizDate); 
+          // Don't reset form completely, just refresh data so users see it in list
+          loadAllData();
+      } else {
+          alert("Error: " + error.message);
+      }
+  };
+
+  const deleteQuiz = async (id: string) => {
+      if(confirm("Delete this scheduled quiz?")) {
+          await supabase.from('daily_quizzes').delete().eq('id', id);
+          loadAllData();
+      }
+  };
+
+  // --- NEW: EDIT FUNCTION ---
+  const handleEditQuiz = (q: any) => {
+      // Populate the form with this quiz's data
+      setQuizDate(q.date);
+      setQuizQuestion(q.question);
+      
+      // Handle options (Parse if string, else use as is)
+      let opts = q.options;
+      if (typeof opts === 'string') {
+          try { opts = JSON.parse(opts); } catch(e) { opts = ['','','','']; }
+      }
+      setQuizOptions(opts);
+      setQuizCorrectIdx(q.correct_index || 0);
+      
+      // Scroll to top to see the form
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleLogout = async () => { await supabase.auth.signOut(); updateProfile({ name: '', is_admin: false }); router.push('/'); };
 
   // --- SKELETON COMPONENT ---
@@ -204,7 +257,7 @@ export default function AdminDashboard() {
                  <div><h1 className="text-xl font-bold">Admin Panel</h1><p className="text-xs text-orange-600 font-bold">Brijesh Kumar Tiwari</p></div>
              </div>
              
-             {/* Header Buttons (Language + Logout) */}
+             {/* Header Buttons */}
              <div className="flex items-center gap-2">
                  <button 
                     onClick={() => setLanguage(language === 'hi' ? 'en' : 'hi')} 
@@ -238,9 +291,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="bg-white rounded-2xl shadow-sm border h-[60vh] overflow-y-auto">
                     {loading ? (
-                        <>
-                           {[1,2,3,4,5,6].map(i => <SkeletonRow key={i} />)}
-                        </>
+                        <> {[1,2,3,4,5,6].map(i => <SkeletonRow key={i} />)} </>
                     ) : filteredUsers.map(u => (
                         <div key={u.id} className="p-4 border-b flex items-center gap-4">
                             <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden shrink-0"><img src={u.avatar_url || '/placeholder-user.png'} className="w-full h-full object-cover" onError={(e)=>e.currentTarget.src='/placeholder-user.png'}/></div>
@@ -261,9 +312,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="bg-white rounded-2xl shadow-sm border h-[65vh] overflow-y-auto">
                     {loading ? (
-                        <>
-                           {[1,2,3,4].map(i => <SkeletonRow key={i} />)}
-                        </>
+                        <> {[1,2,3,4].map(i => <SkeletonRow key={i} />)} </>
                     ) : messages.length === 0 ? <div className="p-10 text-center text-gray-400">No messages yet.</div> : messages.map(s => (
                         <div key={s.id} className={`p-4 border-b ${s.status === 'pending' ? 'bg-orange-50/50' : ''}`}>
                             <div className="flex justify-between items-start mb-2">
@@ -348,7 +397,7 @@ export default function AdminDashboard() {
               </div>
           )}
           
-          {/* --- TAB: QUIZ --- */}
+          {/* --- TAB: QUIZ (UPDATED with Edit) --- */}
           {activeTab === 'quiz' && (
               <div className="space-y-6">
                   <div className="bg-white p-5 rounded-2xl shadow-sm border">
@@ -383,7 +432,16 @@ export default function AdminDashboard() {
                                   </div>
                                   <h4 className="font-bold text-sm text-gray-800">{q.question}</h4>
                               </div>
-                              <button onClick={() => deleteQuiz(q.id)} className="text-red-500 p-1"><Trash2 size={16}/></button>
+                              <div className="flex items-center gap-1">
+                                  {/* EDIT BUTTON */}
+                                  <button onClick={() => handleEditQuiz(q)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
+                                      <Edit2 size={16}/>
+                                  </button>
+                                  {/* DELETE BUTTON */}
+                                  <button onClick={() => deleteQuiz(q.id)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+                                      <Trash2 size={16}/>
+                                  </button>
+                              </div>
                           </div>
                       ))}
                       {!loading && quizzes.length === 0 && <div className="text-center text-gray-400 text-xs py-4">No upcoming quizzes scheduled.</div>}

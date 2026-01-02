@@ -1,17 +1,15 @@
-import { getTodaysPosters, getUpcomingPosters, getGeneralPosters } from "@/lib/posters";
+import { getPosters } from "@/lib/posters"; // We fetch ALL posters now
 import HomeContent from "@/components/HomeContent";
 
-// This is a Server Component, so it can use fs!
+// This is a Server Component that runs at Build Time
 export default async function Home() {
-  const todaysPosters = await getTodaysPosters();
-  const upcomingPosters = await getUpcomingPosters();
-  const generalPosters = await getGeneralPosters();
+  // Fetch ALL data (unfiltered)
+  const allPosters = await getPosters();
 
+  // Pass everything to the Client Component
   return (
     <HomeContent 
-      todaysPosters={todaysPosters} 
-      upcomingPosters={upcomingPosters} 
-      generalPosters={generalPosters} 
+      allPosters={allPosters} 
     />
   );
 }

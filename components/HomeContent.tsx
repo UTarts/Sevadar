@@ -64,34 +64,71 @@ function ExitModal({ onConfirm, onCancel, t }: any) {
     );
 }
 
-export default function HomeContent({ todaysPosters, upcomingPosters, generalPosters }: any) {
+export default function HomeContent({ allPosters }: any) {
   const { profile, t } = useProfile();
   const [showExitModal, setShowExitModal] = useState(false);
 
+  // --- NEW: Client-Side State for Posters ---
+  const [todaysPosters, setTodaysPosters] = useState<any[]>([]);
+  const [upcomingPosters, setUpcomingPosters] = useState<any[]>([]);
+  const [generalPosters, setGeneralPosters] = useState<any[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // --- NEW: Date Logic (Runs on Browser) ---
+  useEffect(() => {
+    if (!allPosters) return;
+
+    // 1. Get Real IST Date
+    const istDateString = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // YYYY-MM-DD
+    const [y, m, d] = istDateString.split('-').map(Number);
+    const todayObj = new Date(y, m - 1, d);
+    
+    // Format to match JSON (DD-MM-YYYY)
+    const todayStr = `${String(d).padStart(2, '0')}-${String(m).padStart(2, '0')}-${y}`;
+
+    // 2. Filter Posters
+    const today = allPosters.filter((p: any) => p.date === todayStr);
+    
+    const general = allPosters.filter((p: any) => p.type === 'general');
+
+    const upcoming = allPosters
+      .filter((p: any) => p.date && p.type === 'dated')
+      .filter((p: any) => {
+          const [pd, pm, py] = p.date.split('-').map(Number);
+          const pDate = new Date(py, pm - 1, pd);
+          return pDate > todayObj;
+      })
+      .sort((a: any, b: any) => {
+          const [d1, m1, y1] = a.date.split('-').map(Number);
+          const [d2, m2, y2] = b.date.split('-').map(Number);
+          return new Date(y1, m1 - 1, d1).getTime() - new Date(y2, m2 - 1, d2).getTime();
+      })
+      .slice(0, 3);
+
+    // 3. Update State
+    setTodaysPosters(today);
+    setGeneralPosters(general);
+    setUpcomingPosters(upcoming);
+    setIsLoaded(true);
+
+  }, [allPosters]);
+
   // --- EXIT APP LOGIC ---
   useEffect(() => {
-    // 1. Push dummy state to trap back button
     window.history.pushState(null, "", window.location.href);
-
     const handlePopState = (event: PopStateEvent) => {
-        // 2. Prevent default back
         event.preventDefault();
         setShowExitModal(true);
     };
-
     window.addEventListener("popstate", handlePopState);
-
     return () => {
         window.removeEventListener("popstate", handlePopState);
     };
   }, []);
 
   const handleExitConfirm = () => {
-     try {
-         window.close();
-     } catch(e) {}
-     window.history.back(); 
-     window.history.back();
+     try { window.close(); } catch(e) {}
+     window.history.back(); window.history.back();
   };
 
   const handleExitCancel = () => {
@@ -105,6 +142,18 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
          window.dispatchEvent(new Event('open-auth'));
      }
   };
+
+  // --- LOADING STATE ---
+  if (!isLoaded) {
+      return (
+          <main className="min-h-screen bg-neutral-100 pt-24 pb-28 p-4 space-y-8">
+              <Header />
+              <Skeleton className="h-64 w-full rounded-3xl" />
+              <div className="flex gap-4 overflow-hidden"><Skeleton className="h-40 w-32 rounded-xl" /><Skeleton className="h-40 w-32 rounded-xl" /></div>
+              <Skeleton className="h-64 w-full rounded-[2.5rem]" />
+          </main>
+      );
+  }
 
   return (
     <main className="min-h-screen bg-neutral-100 pt-24 pb-28 font-sans text-gray-800">
@@ -122,9 +171,7 @@ export default function HomeContent({ todaysPosters, upcomingPosters, generalPos
               <h2 className="text-xl font-bold text-gray-800 font-hindi">{t.todays_special}</h2>
             </div>
             
-            {/* MODIFIED LINE: Added conditional 'justify-center' */}
             <div className={`flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar ${todaysPosters.length === 1 ? 'justify-center' : ''}`}>
-              
               {todaysPosters.map((poster: any, index: number) => (
                 <div key={poster.id} className="min-w-[85%] sm:min-w-[350px] snap-center bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 relative group aspect-[9/16]">
                   <Image 

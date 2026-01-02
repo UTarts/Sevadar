@@ -16,41 +16,57 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 export const requestNotificationPermission = async (userId?: string) => {
-    try {
-      const supported = await isSupported();
-      if (!supported) return null;
-  
+  try {
+    const supported = await isSupported();
+    if (!supported) return null;
+
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
       const messaging = getMessaging(app);
-      const permission = await Notification.requestPermission();
-  
-      if (permission === 'granted') {
-        // --- CHANGE STARTS HERE ---
-        // Manually register the specific file
-        let registration;
-        try {
-           registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        } catch (err) {
-           console.error("SW Register Fail:", err);
-           // Fallback: Try getting existing registration
-           registration = await navigator.serviceWorker.getRegistration();
-        }
-  
-        const token = await getToken(messaging, {
-          vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
-          serviceWorkerRegistration: registration 
-        });
-        // --- CHANGE ENDS HERE ---
-  
-        if (token && userId) {
-          await saveTokenToDatabase(token, userId);
-        }
-        return token;
+
+      // 1. Register the Service Worker
+      let registration;
+      try {
+        registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      } catch (err) {
+        console.error("SW Register Fail:", err);
+        return null; // Stop if we can't register
       }
-    } catch (error) {
-      console.error("Notification permission error:", error);
-      return null;
+
+      // 2. CRITICAL FIX: Wait for it to be active
+      // If it's installing, wait. If it's active, proceed.
+      if (registration.installing) {
+          await new Promise<void>((resolve) => {
+             const worker = registration.installing;
+             if (worker) {
+                worker.addEventListener('statechange', () => {
+                   if (worker.state === 'activated') resolve();
+                });
+             } else {
+                resolve();
+             }
+          });
+      }
+      
+      // Double check: Wait until the browser agrees the SW is ready
+      await navigator.serviceWorker.ready;
+
+      // 3. Now it is safe to get the token
+      const token = await getToken(messaging, {
+        vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+        serviceWorkerRegistration: registration,
+      });
+
+      if (token && userId) {
+        await saveTokenToDatabase(token, userId);
+      }
+      return token;
     }
-  };
+  } catch (error) {
+    console.error("Notification permission error:", error);
+    return null;
+  }
+};
 
 async function saveTokenToDatabase(token: string, userId: string) {
   // Check if token exists to avoid duplicates
