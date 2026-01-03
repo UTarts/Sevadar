@@ -2,9 +2,7 @@
 import { useState, useEffect } from 'react';
 import { X, Play } from 'lucide-react';
 
-// --- CONFIG: CHANGE VIDEO HERE ---
-const YOUTUBE_VIDEO_ID = "Y8MIr2OjcQA"; // Ensure this is a SHORTS ID (Vertical)
-// --------------------------------
+const YOUTUBE_VIDEO_ID = "QCf3qXhExoo"; 
 
 export default function VideoWidget() {
   const [mode, setMode] = useState<'hidden' | 'minimized' | 'expanded'>('hidden');
