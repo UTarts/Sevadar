@@ -41,7 +41,7 @@ export default function VideoWidget() {
             
             {/* Header */}
             <div className="absolute top-0 left-0 right-0 z-10 flex justify-between items-start p-4 bg-gradient-to-b from-black/60 to-transparent">
-                <span className="font-hindi font-bold text-white text-sm drop-shadow-md">बृजेश तिवारी का संदेश</span>
+                <span className="font-hindi font-bold text-white text-sm drop-shadow-md">वेबसाईट के बारे मे सम्पूर्ण जानकारी</span>
                 <button onClick={() => setMode('minimized')} className="p-1.5 bg-white/20 backdrop-blur-md text-white rounded-full hover:bg-white/40">
                     <X size={18} />
                 </button>
