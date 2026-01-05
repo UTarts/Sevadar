@@ -500,6 +500,9 @@ export default function HomeContent({ allPosters }: any) {
              <Link href="/privacy-policy" className="hover:text-[#FF9933] transition-colors">
                 Privacy Policy
               </Link> | &copy; 2025 Brijesh Tiwari Sevadar
+              <Link href="/safety-standards" className="text-sm text-gray-500 hover:text-[#FF9933] transition-colors">
+                Safety Standards
+              </Link>
            </div>
            
         </div>
